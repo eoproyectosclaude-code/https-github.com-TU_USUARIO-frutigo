@@ -1,4 +1,4 @@
-import { IsArray, IsBoolean, IsEnum, IsInt, IsString, Min, ValidateNested } from 'class-validator';
+import { IsArray, IsBoolean, IsEnum, IsInt, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import type { CustomerSegment, DeliveryType, SaleUnit } from '@frutigo/shared';
 
@@ -20,4 +20,10 @@ export class CreateOrderDto {
   @ValidateNested({ each: true })
   @Type(() => OrderLineDto)
   lines!: OrderLineDto[];
+
+  /** Puntos FrutiGo que el comprador quiere canjear por crédito. */
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  pointsToRedeem?: number;
 }

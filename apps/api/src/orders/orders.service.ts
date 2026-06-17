@@ -41,11 +41,15 @@ export class OrdersService {
       });
     }
 
-    // Descuento por nivel FrutiGo Points del usuario (server-authoritative).
+    // Descuento por nivel y saldo de puntos del usuario (server-authoritative).
     let loyaltyDiscountRate = 0;
+    let availablePoints = 0;
     if (userId) {
       const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { points: true } });
-      if (user) loyaltyDiscountRate = tierForPoints(user.points).perkDiscount;
+      if (user) {
+        loyaltyDiscountRate = tierForPoints(user.points).perkDiscount;
+        availablePoints = user.points;
+      }
     }
 
     const totals = calcOrderTotals({
@@ -53,6 +57,8 @@ export class OrdersService {
       deliveryUsd: deliveryCost(dto.deliveryType),
       taxExempt: dto.taxExempt,
       loyaltyDiscountRate,
+      pointsToRedeem: dto.pointsToRedeem ?? 0,
+      availablePoints,
     });
 
     const reference = `FG-${Date.now()}`;
@@ -68,6 +74,8 @@ export class OrdersService {
         buyerFeeUsd: totals.buyerFeeUsd,
         deliveryUsd: totals.deliveryUsd,
         taxUsd: totals.taxUsd,
+        pointsRedeemed: totals.pointsRedeemed,
+        loyaltyCreditUsd: totals.loyaltyCreditUsd,
         totalUsd: totals.totalUsd,
         userId: userId ?? null,
         lines: { create: lines },

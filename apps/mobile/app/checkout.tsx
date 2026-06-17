@@ -25,20 +25,34 @@ const DELIVERIES: { key: DeliveryType; es: string; en: string; icon: string }[] 
 export default function CheckoutScreen() {
   const { theme, locale, t } = useApp();
   const router = useRouter();
-  const { items, segment, deliveryType, setSegment, setDeliveryType, setLoyaltyDiscount, clear } = useCart();
+  const {
+    items, segment, deliveryType, pointsToRedeem, availablePoints,
+    setSegment, setDeliveryType, setLoyaltyDiscount, setAvailablePoints, setPointsToRedeem, clear,
+  } = useCart();
   const totals = useCart((s) => s.totals());
   const { user } = useApp();
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [method, setMethod] = useState<PaymentMethod>('YAPPY');
   const [loading, setLoading] = useState(false);
 
-  // Aplica el descuento del nivel FrutiGo Points del usuario al total.
+  // Carga el descuento de nivel y el saldo de puntos del usuario.
   useEffect(() => {
     if (!user) {
       setLoyaltyDiscount(0);
+      setAvailablePoints(0);
+      setPointsToRedeem(0);
       return;
     }
-    api.loyalty().then((l) => setLoyaltyDiscount(l.perkDiscount)).catch(() => setLoyaltyDiscount(0));
+    api
+      .loyalty()
+      .then((l) => {
+        setLoyaltyDiscount(l.perkDiscount);
+        setAvailablePoints(l.points);
+      })
+      .catch(() => {
+        setLoyaltyDiscount(0);
+        setAvailablePoints(0);
+      });
   }, [user]);
 
   /** Presenta el Payment Sheet nativo de Stripe. Devuelve true si el pago se completó. */
@@ -69,7 +83,7 @@ export default function CheckoutScreen() {
   async function placeOrder() {
     setLoading(true);
     try {
-      const result = await runCheckout({ items, segment, deliveryType, method, customerEmail: user?.email });
+      const result = await runCheckout({ items, segment, deliveryType, method, customerEmail: user?.email, pointsToRedeem });
       const action = result.nextAction;
 
       // Stripe: presentar Payment Sheet nativo y esperar confirmación.
@@ -193,8 +207,51 @@ export default function CheckoutScreen() {
             theme={theme}
           />
           <SummaryRow label={t.common.tax} value={formatUsd(totals.taxUsd, locale)} theme={theme} />
+          {totals.loyaltyCreditUsd > 0 ? (
+            <SummaryRow
+              label={locale === 'es' ? `🎁 Canje (${totals.pointsRedeemed} pts)` : `🎁 Redeem (${totals.pointsRedeemed} pts)`}
+              value={`- ${formatUsd(totals.loyaltyCreditUsd, locale)}`}
+              theme={theme}
+            />
+          ) : null}
           <SummaryRow label={t.common.total} value={formatUsd(totals.totalUsd, locale)} theme={theme} bold />
         </Card>
+
+        {/* Canje de FrutiGo Points */}
+        {user && availablePoints >= 100 ? (
+          <Card theme={theme} style={{ marginTop: spacing.md }}>
+            <Text style={{ color: theme.colors.text, fontFamily: typography.subtitle, fontSize: fontSize.md }}>
+              {locale === 'es' ? '🎁 Canjear FrutiGo Points' : '🎁 Redeem FrutiGo Points'}
+            </Text>
+            <Text style={{ color: theme.colors.textMuted, fontFamily: typography.body, fontSize: fontSize.xs, marginTop: 2 }}>
+              {locale === 'es'
+                ? `Saldo: ${availablePoints} pts · 100 pts = $1 (hasta 30% del pedido)`
+                : `Balance: ${availablePoints} pts · 100 pts = $1 (up to 30% of order)`}
+            </Text>
+            <View style={styles.redeemRow}>
+              <Pressable
+                onPress={() => setPointsToRedeem(Math.max(0, pointsToRedeem - 100))}
+                style={[styles.redeemBtn, { borderColor: theme.colors.border }]}
+              >
+                <Text style={{ color: theme.colors.primary, fontSize: 20, fontFamily: typography.subtitle }}>−</Text>
+              </Pressable>
+              <Text style={{ color: theme.colors.text, fontFamily: typography.title, fontSize: fontSize.lg, minWidth: 90, textAlign: 'center' }}>
+                {pointsToRedeem} pts
+              </Text>
+              <Pressable
+                onPress={() => setPointsToRedeem(Math.min(availablePoints, pointsToRedeem + 100))}
+                style={[styles.redeemBtn, { borderColor: theme.colors.border }]}
+              >
+                <Text style={{ color: theme.colors.primary, fontSize: 20, fontFamily: typography.subtitle }}>+</Text>
+              </Pressable>
+              <Pressable onPress={() => setPointsToRedeem(availablePoints)} style={{ marginLeft: spacing.md }}>
+                <Text style={{ color: theme.colors.primary, fontFamily: typography.bodyMedium, fontSize: fontSize.sm }}>
+                  {locale === 'es' ? 'Máx' : 'Max'}
+                </Text>
+              </Pressable>
+            </View>
+          </Card>
+        ) : null}
       </ScrollView>
 
       <View style={[styles.bottomBar, { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.border }]}>
@@ -266,4 +323,6 @@ const styles = StyleSheet.create({
   radioDot: { width: 10, height: 10, borderRadius: 5 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 3 },
   bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: spacing.lg, borderTopWidth: 1 },
+  redeemRow: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.md },
+  redeemBtn: { borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: 16, paddingVertical: 4, marginHorizontal: 6 },
 });

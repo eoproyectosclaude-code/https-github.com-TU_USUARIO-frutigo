@@ -105,6 +105,8 @@ export class PaymentsService {
 
     if (fulfill) {
       await this.prisma.order.update({ where: { id: order.id }, data: { status: 'PAGADO' } });
+      // Descuenta los puntos canjeados y otorga los nuevos por el pago.
+      await this.loyalty.redeemForOrder(order.userId, order.pointsRedeemed);
       await this.loyalty.awardForOrder(order.userId, order.totalUsd);
       void this.notifications.notifyUser(
         order.userId,

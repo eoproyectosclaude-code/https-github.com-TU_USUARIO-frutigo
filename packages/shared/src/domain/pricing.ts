@@ -1,4 +1,5 @@
 import type { OrderLine, OrderTotals } from './order';
+import { calcRedemption } from './loyalty';
 
 /** Parámetros comerciales de FRUTI GO (plan de negocios). */
 export const PRICING_CONFIG = {
@@ -26,9 +27,13 @@ export interface CalcTotalsInput {
   taxExempt: boolean;
   /** Descuento por nivel FrutiGo Points (fracción 0..1). */
   loyaltyDiscountRate?: number;
+  /** Puntos que el comprador quiere canjear por crédito. */
+  pointsToRedeem?: number;
+  /** Saldo de puntos disponible del comprador. */
+  availablePoints?: number;
 }
 
-/** Calcula los totales de un pedido aplicando descuento de nivel, comisión, envío e ITBMS. */
+/** Calcula los totales: descuento de nivel, comisión, envío, ITBMS y canje de puntos. */
 export function calcOrderTotals(input: CalcTotalsInput): OrderTotals {
   const subtotalUsd = round2(input.lines.reduce((sum, l) => sum + l.subtotalUsd, 0));
   const rate = clampRate(input.loyaltyDiscountRate ?? 0);
@@ -41,8 +46,24 @@ export function calcOrderTotals(input: CalcTotalsInput): OrderTotals {
     subtotalUsd >= PRICING_CONFIG.freeDeliveryThresholdUsd ? 0 : round2(input.deliveryUsd);
   const taxableBase = netSubtotal + buyerFeeUsd + deliveryUsd;
   const taxUsd = input.taxExempt ? 0 : round2(taxableBase * PRICING_CONFIG.taxRate);
-  const totalUsd = round2(netSubtotal + buyerFeeUsd + deliveryUsd + taxUsd);
-  return { subtotalUsd, loyaltyDiscountUsd, buyerFeeUsd, deliveryUsd, taxUsd, totalUsd };
+  const grossTotal = round2(netSubtotal + buyerFeeUsd + deliveryUsd + taxUsd);
+
+  // Canje de FrutiGo Points: el crédito se aplica al total a pagar (tope 30% del subtotal).
+  const redemption = calcRedemption(input.pointsToRedeem ?? 0, input.availablePoints ?? 0, subtotalUsd);
+  const loyaltyCreditUsd = round2(Math.min(redemption.creditUsd, grossTotal));
+  const pointsRedeemed = loyaltyCreditUsd === redemption.creditUsd ? redemption.pointsUsed : 0;
+
+  const totalUsd = round2(grossTotal - loyaltyCreditUsd);
+  return {
+    subtotalUsd,
+    loyaltyDiscountUsd,
+    buyerFeeUsd,
+    deliveryUsd,
+    taxUsd,
+    pointsRedeemed,
+    loyaltyCreditUsd,
+    totalUsd,
+  };
 }
 
 function clampRate(r: number): number {

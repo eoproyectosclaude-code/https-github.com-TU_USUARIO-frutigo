@@ -34,6 +34,10 @@ export interface OrderTotals {
   deliveryUsd: number;
   /** ITBMS 7% — exento para buques en tránsito (Ley 28/1995). */
   taxUsd: number;
+  /** Puntos FrutiGo canjeados en este pedido. */
+  pointsRedeemed: number;
+  /** Crédito en USD aplicado por canje de puntos. */
+  loyaltyCreditUsd: number;
   totalUsd: number;
 }
 

@@ -9,6 +9,8 @@ export interface CheckoutInput {
   deliveryType: DeliveryType;
   method: PaymentMethod;
   customerEmail?: string;
+  /** Puntos FrutiGo a canjear por crédito. */
+  pointsToRedeem?: number;
 }
 
 export interface CheckoutResult {
@@ -39,6 +41,7 @@ export async function runCheckout(input: CheckoutInput): Promise<CheckoutResult>
       segment: input.segment,
       deliveryType: input.deliveryType,
       taxExempt: input.segment === 'BUQUE_NAVIERA',
+      pointsToRedeem: input.pointsToRedeem ?? 0,
       lines: input.items.map((i) => ({
         productId: i.productId,
         unit: i.unit,

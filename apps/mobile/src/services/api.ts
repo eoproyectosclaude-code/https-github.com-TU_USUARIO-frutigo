@@ -169,6 +169,7 @@ export const api = {
     segment: string;
     deliveryType: string;
     taxExempt: boolean;
+    pointsToRedeem?: number;
     lines: { productId: string; unit: string; quantity: number }[];
   }) => request<Order>('/orders', { method: 'POST', body, auth: true }),
 

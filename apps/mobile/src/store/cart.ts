@@ -24,9 +24,15 @@ interface CartState {
   deliveryType: DeliveryType;
   /** Descuento por nivel FrutiGo Points del usuario (fracción). */
   loyaltyDiscountRate: number;
+  /** Saldo de puntos del usuario. */
+  availablePoints: number;
+  /** Puntos a canjear en este pedido. */
+  pointsToRedeem: number;
   setSegment: (s: CustomerSegment) => void;
   setDeliveryType: (d: DeliveryType) => void;
   setLoyaltyDiscount: (rate: number) => void;
+  setAvailablePoints: (p: number) => void;
+  setPointsToRedeem: (p: number) => void;
   addItem: (product: Product, unit: SaleUnit, quantity?: number) => void;
   updateQuantity: (key: string, quantity: number) => void;
   removeItem: (key: string) => void;
@@ -51,9 +57,13 @@ export const useCart = create<CartState>((set, get) => ({
   segment: 'B2C_HOGAR',
   deliveryType: 'DOMICILIO',
   loyaltyDiscountRate: 0,
+  availablePoints: 0,
+  pointsToRedeem: 0,
   setSegment: (segment) => set({ segment }),
   setDeliveryType: (deliveryType) => set({ deliveryType }),
   setLoyaltyDiscount: (loyaltyDiscountRate) => set({ loyaltyDiscountRate }),
+  setAvailablePoints: (availablePoints) => set({ availablePoints }),
+  setPointsToRedeem: (pointsToRedeem) => set({ pointsToRedeem }),
 
   addItem: (product, unit, quantity = 1) => {
     const price = priceForUnit(product, unit);
@@ -93,16 +103,18 @@ export const useCart = create<CartState>((set, get) => ({
   },
 
   removeItem: (key) => set({ items: get().items.filter((i) => i.key !== key) }),
-  clear: () => set({ items: [] }),
+  clear: () => set({ items: [], pointsToRedeem: 0 }),
   count: () => get().items.reduce((n, i) => n + i.quantity, 0),
 
   totals: () => {
-    const { items, segment, deliveryType, loyaltyDiscountRate } = get();
+    const { items, segment, deliveryType, loyaltyDiscountRate, pointsToRedeem, availablePoints } = get();
     return calcOrderTotals({
       lines: items,
       deliveryUsd: deliveryCost(deliveryType),
       taxExempt: segment === 'BUQUE_NAVIERA',
       loyaltyDiscountRate,
+      pointsToRedeem,
+      availablePoints,
     });
   },
 }));

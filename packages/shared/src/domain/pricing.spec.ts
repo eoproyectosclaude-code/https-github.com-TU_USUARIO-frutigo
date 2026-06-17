@@ -53,6 +53,40 @@ describe('pricing', () => {
     expect(t.loyaltyDiscountUsd).toBe(0);
   });
 
+  it('canje de FrutiGo Points aplica crédito al total', () => {
+    // subtotal 100, exento; total bruto = 100 + 2% = 102. Canjea 500 pts = $5 (bajo tope $30).
+    const t = calcOrderTotals({
+      lines: [line(100)],
+      deliveryUsd: 0,
+      taxExempt: true,
+      pointsToRedeem: 500,
+      availablePoints: 500,
+    });
+    expect(t.pointsRedeemed).toBe(500);
+    expect(t.loyaltyCreditUsd).toBe(5);
+    expect(t.totalUsd).toBe(97); // 102 - 5
+  });
+
+  it('canje respeta el tope del 30% del subtotal', () => {
+    // subtotal 100 → tope crédito $30; 5000 pts = $50 → recorta a 3000 pts ($30)
+    const t = calcOrderTotals({
+      lines: [line(100)],
+      deliveryUsd: 0,
+      taxExempt: true,
+      pointsToRedeem: 5000,
+      availablePoints: 5000,
+    });
+    expect(t.pointsRedeemed).toBe(3000);
+    expect(t.loyaltyCreditUsd).toBe(30);
+    expect(t.totalUsd).toBe(72); // 102 - 30
+  });
+
+  it('sin canje, crédito y puntos en 0', () => {
+    const t = calcOrderTotals({ lines: [line(30)], deliveryUsd: 8.5, taxExempt: false });
+    expect(t.pointsRedeemed).toBe(0);
+    expect(t.loyaltyCreditUsd).toBe(0);
+  });
+
   it('formatUsd produce moneda', () => {
     expect(formatUsd(41.84, 'en')).toContain('41.84');
   });

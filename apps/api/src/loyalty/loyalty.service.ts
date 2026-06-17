@@ -19,6 +19,16 @@ export class LoyaltyService {
     this.logger.log(`+${points} FrutiGo Points → user ${userId}`);
   }
 
+  /** Descuenta los puntos canjeados en un pedido (al confirmarse el pago). */
+  async redeemForOrder(userId: string | null | undefined, points: number) {
+    if (!userId || !points || points <= 0) return;
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { points: { decrement: points } },
+    });
+    this.logger.log(`-${points} FrutiGo Points (canje) ← user ${userId}`);
+  }
+
   async summary(userId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { points: true } });
     const points = user?.points ?? 0;

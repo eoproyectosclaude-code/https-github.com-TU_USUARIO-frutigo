@@ -71,9 +71,6 @@ export function creditFromPoints(points: number): number {
 /**
  * Calcula el canje óptimo: cuántos puntos usar y cuánto crédito aplicar,
  * respetando el saldo disponible, el múltiplo (step) y el tope sobre el subtotal.
- * @param requestedPoints puntos que el usuario quiere canjear
- * @param availablePoints saldo de puntos del usuario
- * @param subtotalUsd     subtotal del pedido (para el tope)
  */
 export function calcRedemption(
   requestedPoints: number,
@@ -84,16 +81,13 @@ export function calcRedemption(
   const avail = Math.max(0, Math.floor(availablePoints || 0));
   const sub = Math.max(0, subtotalUsd || 0);
 
-  // No exceder lo disponible y bajar al múltiplo de step.
   let points = Math.min(req, avail);
   points = Math.floor(points / REDEMPTION.step) * REDEMPTION.step;
 
-  // Aplicar tope por subtotal.
   const maxCredit = round2(sub * REDEMPTION.maxFractionOfSubtotal);
   let creditUsd = round2(points * REDEMPTION.usdPerPoint);
   if (creditUsd > maxCredit) {
-    const cappedPoints = Math.floor(maxCredit / REDEMPTION.usdPerPoint / REDEMPTION.step) * REDEMPTION.step;
-    points = cappedPoints;
+    points = Math.floor(maxCredit / REDEMPTION.usdPerPoint / REDEMPTION.step) * REDEMPTION.step;
     creditUsd = round2(points * REDEMPTION.usdPerPoint);
   }
 

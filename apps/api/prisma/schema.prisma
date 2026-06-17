@@ -280,6 +280,8 @@ model Order {
   buyerFeeUsd  Float
   deliveryUsd  Float
   taxUsd       Float
+  pointsRedeemed Int           @default(0)
+  loyaltyCreditUsd Float       @default(0)
   totalUsd     Float
   taxExempt    Boolean         @default(false)
   lines        OrderLine[]
