@@ -47,6 +47,9 @@ let onTokens: ((access: string | null, refresh: string | null) => void) | null =
 export function setAuthToken(token: string | null) {
   authToken = token;
 }
+export function getAccessToken(): string | null {
+  return authToken;
+}
 export function setRefreshToken(token: string | null) {
   refreshToken = token;
 }

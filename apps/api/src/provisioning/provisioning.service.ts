@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { generateManifestRef, isValidWindow, type Port } from '@frutigo/shared';
 import { PrismaService } from '../prisma/prisma.service';
+import { buildManifestPdf } from './manifest-pdf';
 import type { CreateProvisioningDto, CreateVesselDto } from './dto/provisioning.dto';
 
 /**
@@ -83,7 +84,7 @@ export class ProvisioningService {
       where: { id },
       include: { lines: true, vessel: true },
     });
-    if (!req) throw new NotFoundException('Solicitud no encontrada');
+    if (!req) throw new NotFoundException("Solicitud no encontrada");
 
     // Manifiesto digital listo para presentar en puerto / a la naviera.
     return {
@@ -94,9 +95,26 @@ export class ProvisioningService {
       port: req.port,
       deliveryWindow: { start: req.windowStart, end: req.windowEnd },
       taxExempt: req.taxExempt,
-      legalBasis: 'Ley 28/1995 — buque en tránsito internacional, exento de ITBMS',
+      legalBasis: "Ley 28/1995 — buque en tránsito internacional, exento de ITBMS",
       items: req.lines.map((l) => ({ product: l.productName, unit: l.unit, quantity: l.quantity })),
       totalItems: req.lines.reduce((n, l) => n + l.quantity, 0),
     };
+  }
+
+  /** Genera el manifiesto en PDF (buffer) para descarga/compartir. */
+  async manifestPdf(id: string): Promise<{ buffer: Buffer; filename: string }> {
+    const data = await this.manifest(id);
+    const buffer = await buildManifestPdf({
+      manifestRef: data.manifestRef,
+      reference: data.reference,
+      issuedAt: data.issuedAt,
+      vessel: data.vessel,
+      port: data.port,
+      deliveryWindow: data.deliveryWindow,
+      legalBasis: data.legalBasis,
+      items: data.items,
+      totalItems: data.totalItems,
+    });
+    return { buffer, filename: `${data.manifestRef}.pdf` };
   }
 }

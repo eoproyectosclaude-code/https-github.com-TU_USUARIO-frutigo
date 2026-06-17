@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Res, UseGuards } from '@nestjs/common';
+import type { Response } from 'express';
 import { ProvisioningService } from './provisioning.service';
 import { CreateProvisioningDto, CreateVesselDto } from './dto/provisioning.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -33,5 +34,14 @@ export class ProvisioningController {
   @Get('requests/:id/manifest')
   manifest(@Param('id') id: string) {
     return this.provisioning.manifest(id);
+  }
+
+  /** Manifiesto en PDF, descargable. */
+  @Get('requests/:id/manifest.pdf')
+  async manifestPdf(@Param('id') id: string, @Res() res: Response) {
+    const { buffer, filename } = await this.provisioning.manifestPdf(id);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.end(buffer);
   }
 }

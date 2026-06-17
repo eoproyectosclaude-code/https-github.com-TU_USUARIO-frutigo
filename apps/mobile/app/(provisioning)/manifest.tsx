@@ -1,15 +1,29 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { PORTS, UNIT_DEFINITIONS, type SaleUnit } from '@frutigo/shared';
-import { Badge, Card, fontSize, spacing, typography } from '@frutigo/ui';
+import { Badge, Button, Card, fontSize, spacing, typography } from '@frutigo/ui';
 import { useApp } from '../../src/providers/AppProvider';
 import { api, type Manifest } from '../../src/services/api';
+import { downloadAndShareManifest } from '../../src/services/pdf';
 
 export default function ManifestScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { theme, locale } = useApp();
   const [data, setData] = useState<Manifest | null>(null);
+  const [downloading, setDownloading] = useState(false);
+
+  async function exportPdf() {
+    if (!id || !data) return;
+    setDownloading(true);
+    try {
+      await downloadAndShareManifest(id, data.manifestRef);
+    } catch (e) {
+      Alert.alert('PDF', (e as Error).message);
+    } finally {
+      setDownloading(false);
+    }
+  }
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -80,6 +94,14 @@ export default function ManifestScreen() {
           {data.legalBasis}
         </Text>
       </Card>
+
+      <Button
+        label={downloading ? (locale === 'es' ? 'Generando…' : 'Generating…') : locale === 'es' ? '📄 Descargar / Compartir PDF' : '📄 Download / Share PDF'}
+        theme={theme}
+        loading={downloading}
+        onPress={exportPdf}
+        style={{ marginTop: spacing.md }}
+      />
     </ScrollView>
   );
 }
