@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>FRUTI GO · Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Poppins:wght@600;700;900&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --green:#0F3D2E; --green2:#14513c; --orange:#F26419; --yellow:#F6C615;
+    --emerald:#34C759; --ink:#0b1220; --card:rgba(20,33,58,.55); --line:rgba(255,255,255,.08);
+    --txt:#EAF2EC; --muted:#93A4B8;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:Inter,system-ui,sans-serif;color:var(--txt);
+    background:radial-gradient(1200px 800px at 80% -10%, #14513c55, transparent),
+               radial-gradient(900px 700px at -10% 110%, #F2641933, transparent),
+               #060b14;
+    overflow-x:hidden;
+  }
+  #bg3d{position:fixed;inset:0;z-index:0;opacity:.6}
+  .wrap{position:relative;z-index:1;max-width:1240px;margin:0 auto;padding:24px}
+  .brand{font-family:Poppins;font-weight:900;font-size:26px;letter-spacing:.5px}
+  .brand .go{color:var(--orange)}
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+  .pill{display:inline-flex;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);
+    border-radius:999px;padding:8px 14px;font-size:13px;backdrop-filter:blur(12px)}
+  .btn{cursor:pointer;border:0;border-radius:12px;padding:10px 16px;font-family:Inter;font-weight:600;font-size:14px;color:#fff;
+    background:linear-gradient(135deg,var(--orange),#ff8a4d);transition:transform .12s, box-shadow .2s}
+  .btn:hover{transform:translateY(-1px);box-shadow:0 10px 30px #F2641955}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--txt)}
+  .grid{display:grid;gap:16px}
+  .kpis{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;backdrop-filter:blur(14px);
+    box-shadow:0 10px 40px rgba(0,0,0,.25)}
+  .card .label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:1px}
+  .card .value{font-family:Poppins;font-weight:700;font-size:30px;margin-top:6px;
+    background:linear-gradient(135deg,#fff,#bfe7cf);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .card .value.accent{background:linear-gradient(135deg,var(--yellow),var(--orange));-webkit-background-clip:text;color:transparent}
+  .row2{grid-template-columns:1.4fr 1fr}
+  h2{font-family:Poppins;font-weight:700;font-size:18px;margin:28px 0 12px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{ text-align:left;color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.5px;padding:10px 8px;border-bottom:1px solid var(--line)}
+  td{padding:12px 8px;border-bottom:1px solid var(--line)}
+  .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600}
+  .badge.ok{background:#22c55e22;color:#7CFFB0;border:1px solid #22c55e55}
+  .badge.warn{background:#F6C61522;color:var(--yellow);border:1px solid #F6C61555}
+  .switch{cursor:pointer;border:0;border-radius:999px;padding:6px 12px;font-weight:600;font-size:12px;color:#fff}
+  .switch.on{background:#1B7A4B}.switch.off{background:#3a4763}
+  /* Login */
+  #login{position:fixed;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;background:#060b14ee;backdrop-filter:blur(6px)}
+  #login .card{width:360px}
+  input{width:100%;margin-top:10px;background:#0c1626;border:1px solid var(--line);border-radius:12px;padding:12px;color:var(--txt);font-size:15px}
+  .muted{color:var(--muted);font-size:13px}
+  .glow{position:fixed;width:420px;height:420px;border-radius:50%;filter:blur(120px);z-index:0;opacity:.35;pointer-events:none}
+  .glow.a{background:var(--orange);top:-120px;right:-80px}
+  .glow.b{background:var(--emerald);bottom:-160px;left:-100px}
+  .hint{font-size:11px;color:var(--muted);margin-top:8px}
+</style>
+</head>
+<body>
+<canvas id="bg3d"></canvas>
+<div class="glow a"></div><div class="glow b"></div>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="card">
+    <div class="brand">FRUTI<span class="go">GO</span></div>
+    <div class="muted" style="margin:4px 0 14px">Panel de administración</div>
+    <input id="email" type="email" placeholder="Correo (rol ADMIN)" value="" />
+    <input id="password" type="password" placeholder="Contraseña" />
+    <input id="apiBase" type="text" placeholder="API base" value="http://localhost:3000" />
+    <button class="btn" style="width:100%;margin-top:14px" onclick="login()">Entrar</button>
+    <div id="loginErr" class="hint" style="color:#ff9a9a"></div>
+    <div class="hint">Tip: usa una cuenta con rol ADMIN. Sin API, verás datos demo.</div>
+  </div>
+</div>
+
+<div class="wrap" id="app" style="display:none">
+  <div class="topbar">
+    <div>
+      <div class="brand">FRUTI<span class="go">GO</span> <span class="muted" style="font-size:14px">· Admin</span></div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <span class="pill" id="srcPill">● en vivo</span>
+      <button class="btn ghost" onclick="loadAll()">↻ Actualizar</button>
+      <button class="btn ghost" onclick="logout()">Salir</button>
+    </div>
+  </div>
+
+  <div class="grid kpis" id="kpis"></div>
+
+  <div class="grid row2" style="margin-top:18px">
+    <div class="card"><div class="label">Ingresos vs GMV</div><canvas id="barChart" height="150"></canvas></div>
+    <div class="card"><div class="label">Estado de proveedores</div><canvas id="donutChart" height="150"></canvas></div>
+  </div>
+
+  <h2>🌾 Proveedores</h2>
+  <div class="card"><table><thead><tr><th>Proveedor</th><th>Tipo</th><th>Provincia</th><th>Productos</th><th>Estado</th><th></th></tr></thead><tbody id="supBody"></tbody></table></div>
+
+  <h2>💳 Pagos recientes</h2>
+  <div class="card"><table><thead><tr><th>Pedido</th><th>Método</th><th>Segmento</th><th>Monto</th><th>Estado</th></tr></thead><tbody id="payBody"></tbody></table></div>
+
+  <div class="muted" style="text-align:center;margin:30px 0 10px">FRUTI GO · Panel de administración · Tecnología FRUTI GO 2026</div>
+</div>
+
+<script>
+// ---------- estado ----------
+let API = localStorage.getItem('fg_api') || 'http://localhost:3000';
+let token = localStorage.getItem('fg_token') || '';
+let barChart, donutChart;
+
+const money = n => new Intl.NumberFormat('es-PA',{style:'currency',currency:'USD'}).format(n||0);
+const $ = s => document.querySelector(s);
+
+// ---------- 3D background (three.js) ----------
+(function init3D(){
+  if(!window.THREE) return;
+  const canvas=$('#bg3d');
+  const renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});
+  renderer.setSize(innerWidth,innerHeight); renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  const scene=new THREE.Scene();
+  const cam=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.1,100); cam.position.z=14;
+  // Icosaedro wireframe (marca)
+  const geo=new THREE.IcosahedronGeometry(6,1);
+  const mat=new THREE.MeshBasicMaterial({color:0xF26419,wireframe:true,transparent:true,opacity:.35});
+  const mesh=new THREE.Mesh(geo,mat); scene.add(mesh);
+  const inner=new THREE.Mesh(new THREE.IcosahedronGeometry(3.2,0),new THREE.MeshBasicMaterial({color:0x34C759,wireframe:true,transparent:true,opacity:.25}));
+  scene.add(inner);
+  // Partículas
+  const pts=new THREE.BufferGeometry();
+  const N=900,arr=new Float32Array(N*3);
+  for(let i=0;i<N*3;i++) arr[i]=(Math.random()-.5)*60;
+  pts.setAttribute('position',new THREE.BufferAttribute(arr,3));
+  const stars=new THREE.Points(pts,new THREE.PointsMaterial({color:0xF6C615,size:.08,transparent:true,opacity:.6}));
+  scene.add(stars);
+  addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();});
+  (function loop(t){requestAnimationFrame(loop);mesh.rotation.x=t/9000;mesh.rotation.y=t/7000;inner.rotation.y=-t/5000;stars.rotation.y=t/40000;renderer.render(scene,cam);})(0);
+})();
+
+// ---------- API ----------
+async function apiGet(path){
+  const r=await fetch(API+path,{headers:token?{Authorization:'Bearer '+token}:{}});
+  if(!r.ok) throw new Error('HTTP '+r.status); return r.json();
+}
+async function apiPatch(path,body){
+  const r=await fetch(API+path,{method:'PATCH',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify(body)});
+  if(!r.ok) throw new Error('HTTP '+r.status); return r.json();
+}
+
+async function login(){
+  API=$('#apiBase').value.trim()||API; localStorage.setItem('fg_api',API);
+  const email=$('#email').value.trim(), password=$('#password').value;
+  $('#loginErr').textContent='';
+  try{
+    const res=await fetch(API+'/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+    if(!res.ok) throw new Error('Credenciales inválidas');
+    const data=await res.json();
+    if(data.user && data.user.role!=='ADMIN'){ $('#loginErr').textContent='Esta cuenta no es ADMIN.'; return; }
+    token=data.accessToken; localStorage.setItem('fg_token',token);
+    enter();
+  }catch(e){ $('#loginErr').textContent=e.message+' — mostrando datos demo.'; token=''; enter(true); }
+}
+function logout(){ token=''; localStorage.removeItem('fg_token'); $('#app').style.display='none'; $('#login').style.display='flex'; }
+function enter(demo){ $('#login').style.display='none'; $('#app').style.display='block'; loadAll(demo); }
+
+// ---------- datos demo (si no hay API) ----------
+const DEMO = {
+  dashboard:{ suppliers:12, verifiedSuppliers:8, pendingSuppliers:4, products:46, totalOrders:318, paidOrders:271, gmvUsd:48230.5, platformRevenueUsd:3611.2 },
+  suppliers:[
+    {id:'1',name:'Finca Cerro Punta',type:'FINCA',province:'Chiriquí',verified:true,products:9},
+    {id:'2',name:'Cooperativa Agro Azuero',type:'COOPERATIVA',province:'Los Santos',verified:true,products:7},
+    {id:'3',name:'Distribuidora Balboa',type:'DISTRIBUIDORA',province:'Panamá',verified:false,products:5},
+    {id:'4',name:'Frutas del Caribe',type:'FINCA',province:'Bocas del Toro',verified:false,products:4},
+  ],
+  payments:[
+    {id:'a',reference:'FG-1042',method:'YAPPY',segment:'B2C_HOGAR',amountUsd:41.84,status:'COMPLETADO'},
+    {id:'b',reference:'FG-1041',method:'STRIPE',segment:'B2B_HORECA',amountUsd:312.5,status:'COMPLETADO'},
+    {id:'c',reference:'SP-2207',method:'CRYPTO',segment:'BUQUE_NAVIERA',amountUsd:2480,status:'PENDIENTE'},
+    {id:'d',reference:'FG-1039',method:'VISA',segment:'DISTRIBUIDOR',amountUsd:875.2,status:'COMPLETADO'},
+  ],
+};
+
+async function loadAll(forceDemo){
+  let dash,sups,pays,live=true;
+  try{
+    if(forceDemo) throw new Error('demo');
+    [dash,sups,pays]=await Promise.all([apiGet('/admin/dashboard'),apiGet('/admin/suppliers'),apiGet('/admin/payments')]);
+  }catch(e){ dash=DEMO.dashboard; sups=DEMO.suppliers; pays=DEMO.payments; live=false; }
+  $('#srcPill').textContent = live?'● en vivo':'● datos demo';
+  $('#srcPill').style.color = live?'#7CFFB0':'#F6C615';
+  renderKpis(dash); renderCharts(dash); renderSuppliers(sups,live); renderPayments(pays);
+}
+
+function animateValue(el,end,fmt){
+  const start=0,dur=900,t0=performance.now();
+  (function step(t){const p=Math.min(1,(t-t0)/dur);el.textContent=fmt(end*(0.2+0.8*p)<end?end*p:end);if(p<1)requestAnimationFrame(step);else el.textContent=fmt(end);})(t0);
+}
+function renderKpis(d){
+  const cards=[
+    {l:'GMV',v:money(d.gmvUsd),acc:true},
+    {l:'Ingreso plataforma',v:money(d.platformRevenueUsd),acc:true},
+    {l:'Pedidos pagados',v:d.paidOrders},
+    {l:'Pedidos totales',v:d.totalOrders},
+    {l:'Proveedores',v:d.suppliers},
+    {l:'Por verificar',v:d.pendingSuppliers},
+  ];
+  $('#kpis').innerHTML=cards.map(c=>`<div class="card"><div class="label">${c.l}</div><div class="value ${c.acc?'accent':''}">${c.v}</div></div>`).join('');
+}
+function renderCharts(d){
+  const bc=document.getElementById('barChart').getContext('2d');
+  const dc=document.getElementById('donutChart').getContext('2d');
+  if(barChart) barChart.destroy(); if(donutChart) donutChart.destroy();
+  barChart=new Chart(bc,{type:'bar',data:{labels:['GMV','Ingreso plataforma'],datasets:[{data:[d.gmvUsd,d.platformRevenueUsd],backgroundColor:['#F26419','#34C759'],borderRadius:8}]},
+    options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#93A4B8'},grid:{display:false}},y:{ticks:{color:'#93A4B8'},grid:{color:'rgba(255,255,255,.06)'}}}}});
+  donutChart=new Chart(dc,{type:'doughnut',data:{labels:['Verificados','Por verificar'],datasets:[{data:[d.verifiedSuppliers,d.pendingSuppliers],backgroundColor:['#1B7A4B','#F6C615'],borderWidth:0}]},
+    options:{cutout:'68%',plugins:{legend:{labels:{color:'#EAF2EC'}}}}});
+}
+function renderSuppliers(list,live){
+  $('#supBody').innerHTML=list.map(s=>`<tr>
+    <td>${s.name}</td><td>${s.type}</td><td>${s.province}</td><td>${s.products}</td>
+    <td>${s.verified?'<span class="badge ok">✓ Verificado</span>':'<span class="badge warn">Pendiente</span>'}</td>
+    <td><button class="switch ${s.verified?'on':'off'}" onclick="toggleSup('${s.id}',${!s.verified},${live})">${s.verified?'Quitar':'Verificar'}</button></td>
+  </tr>`).join('');
+}
+function renderPayments(list){
+  const col={COMPLETADO:'ok',AUTORIZADO:'ok',PENDIENTE:'warn',FALLIDO:'warn'};
+  $('#payBody').innerHTML=list.map(p=>`<tr>
+    <td>${p.reference}</td><td>${p.method}</td><td>${p.segment}</td><td>${money(p.amountUsd)}</td>
+    <td><span class="badge ${col[p.status]||'warn'}">${p.status}</span></td></tr>`).join('');
+}
+async function toggleSup(id,verified,live){
+  if(!live){ alert('Modo demo: conecta el API para verificar realmente.'); return; }
+  try{ await apiPatch('/admin/suppliers/'+id+'/verify',{verified}); loadAll(); }
+  catch(e){ alert('Error: '+e.message); }
+}
+
+// auto-entrar si hay token guardado
+$('#apiBase').value=API;
+if(token) enter();
+</script>
+</body>
+</html>

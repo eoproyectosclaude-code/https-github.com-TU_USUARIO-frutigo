@@ -42,6 +42,14 @@ Provisioning, pagos reales, recomendaciones y endurecimiento de seguridad.
 
 ---
 
+## Panel de administración web
+
+Dashboard web autónomo de nivel profesional en **`apps/admin/index.html`** — ábrelo en el
+navegador (doble clic o sírvelo). Login con cuenta **ADMIN**, KPIs en vivo (GMV, ingreso de
+plataforma, pedidos, proveedores), **fondo 3D animado** (three.js), **gráficas** (Chart.js),
+verificación de proveedores y conciliación de pagos. Si el API no está disponible, muestra
+datos demo para previsualizar el diseño. Configura el "API base" en la pantalla de login.
+
 ## Arquitectura (monorepo)
 
 ```
