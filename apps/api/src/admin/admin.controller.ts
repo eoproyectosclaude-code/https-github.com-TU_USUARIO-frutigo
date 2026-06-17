@@ -21,14 +21,10 @@ export class AdminController {
   ) {}
 
   @Get('dashboard')
-  dashboard() {
-    return this.admin.dashboard();
-  }
+  dashboard() { return this.admin.dashboard(); }
 
   @Get('suppliers')
-  suppliers() {
-    return this.admin.listSuppliers();
-  }
+  suppliers() { return this.admin.listSuppliers(); }
 
   @Patch('suppliers/:id/verify')
   async verify(@Param('id') id: string, @Body() dto: SetVerifiedDto) {
@@ -38,7 +34,8 @@ export class AdminController {
   }
 
   @Get('payments')
-  payments() {
-    return this.admin.listPayments();
-  }
+  payments() { return this.admin.listPayments(); }
+
+  @Get('deliveries/active')
+  activeDeliveries() { return this.admin.activeDeliveries(); }
 }

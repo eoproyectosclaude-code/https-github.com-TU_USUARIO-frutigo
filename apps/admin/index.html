@@ -5,9 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>FRUTI GO · Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Poppins:wght@600;700;900&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
   :root{--green:#0F3D2E;--orange:#F26419;--yellow:#F6C615;--emerald:#34C759;
     --card:rgba(20,33,58,.55);--line:rgba(255,255,255,.08);--txt:#EAF2EC;--muted:#93A4B8;}
@@ -28,6 +30,7 @@
   .card .value{font-family:Poppins;font-weight:700;font-size:30px;margin-top:6px;background:linear-gradient(135deg,#fff,#bfe7cf);-webkit-background-clip:text;background-clip:text;color:transparent}
   .card .value.accent{background:linear-gradient(135deg,var(--yellow),var(--orange));-webkit-background-clip:text;color:transparent}
   .row2{grid-template-columns:1.4fr 1fr}
+  .maprow{grid-template-columns:2fr 1fr}
   h2{font-family:Poppins;font-weight:700;font-size:18px;margin:28px 0 12px}
   table{width:100%;border-collapse:collapse;font-size:14px}
   th{text-align:left;color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;padding:10px 8px;border-bottom:1px solid var(--line)}
@@ -48,6 +51,11 @@
   .card.flash{animation:pulse .9s ease-out;border-color:#34C75988}
   .live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#7CFFB0;margin-right:6px;animation:blink 1.4s infinite}
   @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+  #map{height:380px;border-radius:14px;overflow:hidden}
+  .leaflet-container{background:#0c1626}
+  .dlist{max-height:380px;overflow:auto;display:flex;flex-direction:column;gap:10px}
+  .ditem{background:#0c1626;border:1px solid var(--line);border-radius:12px;padding:12px}
+  .ditem .ref{font-family:Poppins;font-weight:600}
 </style>
 </head>
 <body>
@@ -77,6 +85,13 @@
     </div>
   </div>
   <div class="grid kpis" id="kpis"></div>
+
+  <h2>🗺️ Entregas activas <span class="muted" id="dcount" style="font-size:13px"></span></h2>
+  <div class="grid maprow">
+    <div class="card" style="padding:8px"><div id="map"></div></div>
+    <div class="card"><div class="dlist" id="dlist"></div></div>
+  </div>
+
   <div class="grid row2" style="margin-top:18px">
     <div class="card"><div class="label">Ingresos vs GMV</div><canvas id="barChart" height="150"></canvas></div>
     <div class="card"><div class="label">Estado de proveedores</div><canvas id="donutChart" height="150"></canvas></div>
@@ -91,9 +106,10 @@
 <script>
 let API=localStorage.getItem('fg_api')||'http://localhost:3000';
 let token=localStorage.getItem('fg_token')||'';
-let barChart,donutChart,adminSocket;
+let barChart,donutChart,adminSocket,map,driverMarkers={};
 const money=n=>new Intl.NumberFormat('es-PA',{style:'currency',currency:'USD'}).format(n||0);
 const $=s=>document.querySelector(s);
+const PTY=[8.98,-79.52];
 
 (function init3D(){
   if(!window.THREE) return;
@@ -114,8 +130,7 @@ async function apiGet(p){const r=await fetch(API+p,{headers:token?{Authorization
 async function apiPatch(p,b){const r=await fetch(API+p,{method:'PATCH',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify(b)});if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}
 
 async function login(){
-  API=$('#apiBase').value.trim()||API;localStorage.setItem('fg_api',API);
-  $('#loginErr').textContent='';
+  API=$('#apiBase').value.trim()||API;localStorage.setItem('fg_api',API);$('#loginErr').textContent='';
   try{
     const res=await fetch(API+'/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:$('#email').value.trim(),password:$('#password').value})});
     if(!res.ok)throw new Error('Credenciales inválidas');
@@ -125,7 +140,13 @@ async function login(){
   }catch(e){$('#loginErr').textContent=e.message+' — mostrando datos demo.';token='';enter(true);}
 }
 function logout(){token='';localStorage.removeItem('fg_token');try{adminSocket&&adminSocket.disconnect();}catch(e){}$('#app').style.display='none';$('#login').style.display='flex';}
-function enter(demo){$('#login').style.display='none';$('#app').style.display='block';loadAll(demo);if(!demo)connectRealtime();}
+function enter(demo){$('#login').style.display='none';$('#app').style.display='block';setTimeout(initMap,60);loadAll(demo);if(!demo)connectRealtime();}
+
+function initMap(){
+  if(map||!window.L)return;
+  map=L.map('map',{zoomControl:true,attributionControl:false}).setView(PTY,11);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
+}
 
 function connectRealtime(){
   if(!window.io||!token)return;
@@ -133,20 +154,22 @@ function connectRealtime(){
   adminSocket=io(API+'/admin',{transports:['websocket'],auth:{token}});
   adminSocket.on('connect',()=>{adminSocket.emit('subscribe');$('#srcPill').innerHTML='<span class="live-dot"></span>tiempo real';$('#srcPill').style.color='#7CFFB0';});
   adminSocket.on('metrics',m=>{renderKpis(m);renderCharts(m);flashKpis();});
+  adminSocket.on('deliveries',renderDeliveries);
   adminSocket.on('disconnect',()=>{$('#srcPill').textContent='● reconectando…';$('#srcPill').style.color='#F6C615';});
 }
 function flashKpis(){document.querySelectorAll('#kpis .card').forEach(c=>{c.classList.remove('flash');void c.offsetWidth;c.classList.add('flash');});}
 
 const DEMO={dashboard:{suppliers:12,verifiedSuppliers:8,pendingSuppliers:4,products:46,totalOrders:318,paidOrders:271,gmvUsd:48230.5,platformRevenueUsd:3611.2},
   suppliers:[{id:'1',name:'Finca Cerro Punta',type:'FINCA',province:'Chiriquí',verified:true,products:9},{id:'2',name:'Cooperativa Agro Azuero',type:'COOPERATIVA',province:'Los Santos',verified:true,products:7},{id:'3',name:'Distribuidora Balboa',type:'DISTRIBUIDORA',province:'Panamá',verified:false,products:5},{id:'4',name:'Frutas del Caribe',type:'FINCA',province:'Bocas del Toro',verified:false,products:4}],
-  payments:[{id:'a',reference:'FG-1042',method:'YAPPY',segment:'B2C_HOGAR',amountUsd:41.84,status:'COMPLETADO'},{id:'b',reference:'FG-1041',method:'STRIPE',segment:'B2B_HORECA',amountUsd:312.5,status:'COMPLETADO'},{id:'c',reference:'SP-2207',method:'CRYPTO',segment:'BUQUE_NAVIERA',amountUsd:2480,status:'PENDIENTE'},{id:'d',reference:'FG-1039',method:'VISA',segment:'DISTRIBUIDOR',amountUsd:875.2,status:'COMPLETADO'}]};
+  payments:[{id:'a',reference:'FG-1042',method:'YAPPY',segment:'B2C_HOGAR',amountUsd:41.84,status:'COMPLETADO'},{id:'b',reference:'FG-1041',method:'STRIPE',segment:'B2B_HORECA',amountUsd:312.5,status:'COMPLETADO'},{id:'c',reference:'SP-2207',method:'CRYPTO',segment:'BUQUE_NAVIERA',amountUsd:2480,status:'PENDIENTE'},{id:'d',reference:'FG-1039',method:'VISA',segment:'DISTRIBUIDOR',amountUsd:875.2,status:'COMPLETADO'}],
+  deliveries:[{id:'d1',reference:'FG-1042',status:'EN_RUTA',driver:{name:'Luis',vehicle:'MOTO'},dropoffAddress:'Costa del Este',location:{lat:9.01,lng:-79.50},dropoff:{lat:9.03,lng:-79.48}},{id:'d2',reference:'FG-1037',status:'RECOGIDO',driver:{name:'Ana',vehicle:'VAN'},dropoffAddress:'San Francisco',location:{lat:8.98,lng:-79.51},dropoff:{lat:8.99,lng:-79.53}}]};
 
 async function loadAll(forceDemo){
-  let dash,sups,pays,live=true;
-  try{ if(forceDemo)throw new Error('demo'); [dash,sups,pays]=await Promise.all([apiGet('/admin/dashboard'),apiGet('/admin/suppliers'),apiGet('/admin/payments')]); }
-  catch(e){ dash=DEMO.dashboard;sups=DEMO.suppliers;pays=DEMO.payments;live=false; }
+  let dash,sups,pays,dels,live=true;
+  try{ if(forceDemo)throw new Error('demo'); [dash,sups,pays,dels]=await Promise.all([apiGet('/admin/dashboard'),apiGet('/admin/suppliers'),apiGet('/admin/payments'),apiGet('/admin/deliveries/active')]); }
+  catch(e){ dash=DEMO.dashboard;sups=DEMO.suppliers;pays=DEMO.payments;dels=DEMO.deliveries;live=false; }
   if(!adminSocket||!adminSocket.connected){$('#srcPill').textContent=live?'● en vivo':'● datos demo';$('#srcPill').style.color=live?'#7CFFB0':'#F6C615';}
-  renderKpis(dash);renderCharts(dash);renderSuppliers(sups,live);renderPayments(pays);
+  renderKpis(dash);renderCharts(dash);renderSuppliers(sups,live);renderPayments(pays);renderDeliveries(dels);
 }
 function renderKpis(d){
   const cards=[{l:'GMV',v:money(d.gmvUsd),a:1},{l:'Ingreso plataforma',v:money(d.platformRevenueUsd),a:1},{l:'Pedidos pagados',v:d.paidOrders},{l:'Pedidos totales',v:d.totalOrders},{l:'Proveedores',v:d.suppliers},{l:'Por verificar',v:d.pendingSuppliers}];
@@ -157,6 +180,27 @@ function renderCharts(d){
   if(barChart)barChart.destroy(); if(donutChart)donutChart.destroy();
   barChart=new Chart(bc,{type:'bar',data:{labels:['GMV','Ingreso plataforma'],datasets:[{data:[d.gmvUsd,d.platformRevenueUsd],backgroundColor:['#F26419','#34C759'],borderRadius:8}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#93A4B8'},grid:{display:false}},y:{ticks:{color:'#93A4B8'},grid:{color:'rgba(255,255,255,.06)'}}}}});
   donutChart=new Chart(dc,{type:'doughnut',data:{labels:['Verificados','Por verificar'],datasets:[{data:[d.verifiedSuppliers,d.pendingSuppliers],backgroundColor:['#1B7A4B','#F6C615'],borderWidth:0}]},options:{cutout:'68%',plugins:{legend:{labels:{color:'#EAF2EC'}}}}});
+}
+function renderDeliveries(list){
+  list=list||[];
+  $('#dcount').textContent='· '+list.length+' en curso';
+  $('#dlist').innerHTML=list.length?list.map(d=>'<div class="ditem"><div class="ref">'+d.reference+' <span class="badge ok" style="font-size:10px">'+d.status+'</span></div><div class="muted" style="font-size:12px">🛵 '+((d.driver&&d.driver.name)||'—')+' · 📍 '+(d.dropoffAddress||'')+'</div></div>').join(''):'<div class="muted">No hay entregas activas ahora.</div>';
+  if(!map){return;}
+  Object.values(driverMarkers).forEach(m=>map.removeLayer(m));driverMarkers={};
+  const pts=[];
+  list.forEach(d=>{
+    if(d.location){
+      const ic=L.divIcon({className:'',html:'<div style="font-size:22px">🛵</div>',iconSize:[24,24]});
+      const mk=L.marker([d.location.lat,d.location.lng],{icon:ic}).addTo(map).bindPopup('<b>'+d.reference+'</b><br>'+((d.driver&&d.driver.name)||'')+' · '+d.status);
+      driverMarkers['d_'+d.id]=mk;pts.push([d.location.lat,d.location.lng]);
+    }
+    if(d.dropoff){
+      const ic=L.divIcon({className:'',html:'<div style="font-size:20px">📍</div>',iconSize:[20,20]});
+      const mk=L.marker([d.dropoff.lat,d.dropoff.lng],{icon:ic}).addTo(map);
+      driverMarkers['t_'+d.id]=mk;pts.push([d.dropoff.lat,d.dropoff.lng]);
+    }
+  });
+  if(pts.length) map.fitBounds(pts,{padding:[40,40],maxZoom:13});
 }
 function renderSuppliers(list,live){
   $('#supBody').innerHTML=list.map(s=>'<tr><td>'+s.name+'</td><td>'+s.type+'</td><td>'+s.province+'</td><td>'+s.products+'</td><td>'+(s.verified?'<span class="badge ok">✓ Verificado</span>':'<span class="badge warn">Pendiente</span>')+'</td><td><button class="switch '+(s.verified?'on':'off')+'" onclick="toggleSup(\''+s.id+'\','+(!s.verified)+','+live+')">'+(s.verified?'Quitar':'Verificar')+'</button></td></tr>').join('');

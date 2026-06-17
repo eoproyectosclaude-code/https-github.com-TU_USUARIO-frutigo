@@ -18,9 +18,7 @@ export class AdminService {
       this.prisma.order.findMany({ where: { status: 'PAGADO' } }),
     ]);
 
-    // GMV = valor bruto de mercancía de pedidos pagados.
     const gmvUsd = round2(paidOrders.reduce((s, o) => s + o.totalUsd, 0));
-    // Ingresos de la plataforma = comisión comprador (2%) + comisión proveedor (4%).
     const buyerFees = paidOrders.reduce((s, o) => s + o.buyerFeeUsd, 0);
     const supplierFees = paidOrders.reduce((s, o) => s + o.subtotalUsd * SUPPLIER_FEE_RATE, 0);
     const platformRevenueUsd = round2(buyerFees + supplierFees);
@@ -45,13 +43,8 @@ export class AdminService {
       orderBy: [{ verified: 'asc' }, { name: 'asc' }],
     });
     return suppliers.map((s) => ({
-      id: s.id,
-      name: s.name,
-      type: s.type,
-      province: s.province,
-      verified: s.verified,
-      ruc: s.ruc,
-      products: s._count.products,
+      id: s.id, name: s.name, type: s.type, province: s.province,
+      verified: s.verified, ruc: s.ruc, products: s._count.products,
     }));
   }
 
@@ -66,15 +59,35 @@ export class AdminService {
       take: 100,
     });
     return payments.map((p) => ({
-      id: p.id,
-      method: p.method,
-      status: p.status,
-      amountUsd: p.amountUsd,
-      reference: p.order.reference,
-      orderStatus: p.order.status,
-      segment: p.order.segment,
-      createdAt: p.createdAt,
+      id: p.id, method: p.method, status: p.status, amountUsd: p.amountUsd,
+      reference: p.order.reference, orderStatus: p.order.status, segment: p.order.segment, createdAt: p.createdAt,
     }));
+  }
+
+  /** Entregas activas con última ubicación para el mapa del dashboard. */
+  async activeDeliveries() {
+    const deliveries = await this.prisma.delivery.findMany({
+      where: { status: { in: ['ASIGNADO', 'RECOGIDO', 'EN_RUTA'] } },
+      include: {
+        order: { select: { reference: true, totalUsd: true, segment: true } },
+        driver: { select: { name: true, vehicle: true, lat: true, lng: true } },
+        locations: { orderBy: { at: 'desc' }, take: 1 },
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: 100,
+    });
+    return deliveries.map((d) => {
+      const last = d.locations[0];
+      const lat = last?.lat ?? d.driver?.lat ?? null;
+      const lng = last?.lng ?? d.driver?.lng ?? null;
+      return {
+        id: d.id, reference: d.order.reference, status: d.status, segment: d.order.segment, totalUsd: d.order.totalUsd,
+        driver: d.driver ? { name: d.driver.name, vehicle: d.driver.vehicle } : null,
+        dropoffAddress: d.dropoffAddress,
+        location: lat != null && lng != null ? { lat, lng, at: last?.at ?? null } : null,
+        dropoff: d.dropoffLat != null && d.dropoffLng != null ? { lat: d.dropoffLat, lng: d.dropoffLng } : null,
+      };
+    });
   }
 }
 
