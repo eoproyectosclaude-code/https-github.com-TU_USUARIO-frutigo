@@ -1,0 +1,53 @@
+{
+  "expo": {
+    "name": "FRUTI GO",
+    "slug": "frutigo",
+    "scheme": "frutigo",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "backgroundColor": "#0F3D2E",
+      "resizeMode": "contain"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "pa.frutigo.app"
+    },
+    "android": {
+      "package": "pa.frutigo.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#0F3D2E"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.pa.frutigo.app",
+          "enableGooglePay": true
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "FRUTI GO usa tu ubicación para el seguimiento de entregas en tiempo real."
+        }
+      ],
+      "expo-notifications"
+    ],
+    "extra": {
+      "apiBaseUrl": "http://localhost:3000",
+      "stripePublishableKey": "pk_test_xxx",
+      "stripeMerchantId": "merchant.pa.frutigo.app"
+    }
+  }
+}

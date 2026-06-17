@@ -1,0 +1,316 @@
+// Esquema de datos FRUTI GO — PostgreSQL
+// Modela proveedores, productos (con precios por unidad), pedidos y pagos.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SupplierType {
+  FINCA
+  COOPERATIVA
+  DISTRIBUIDORA
+}
+
+enum SaleUnit {
+  KG
+  HALF_QUINTAL
+  QUINTAL
+}
+
+enum ProductCategory {
+  FRUTAS
+  VERDURAS
+  LEGUMBRES
+  TUBERCULOS
+  HIERBAS
+}
+
+enum CustomerSegment {
+  B2C_HOGAR
+  B2B_HORECA
+  DISTRIBUIDOR
+  BUQUE_NAVIERA
+}
+
+enum OrderStatus {
+  CARRITO
+  PENDIENTE_PAGO
+  PAGADO
+  EN_PREPARACION
+  EN_RUTA
+  ENTREGADO
+  CANCELADO
+}
+
+enum PaymentMethod {
+  STRIPE
+  YAPPY
+  VISA
+  CRYPTO
+  ACH_SWIFT
+  CASH
+}
+
+enum PaymentStatus {
+  INICIADO
+  PENDIENTE
+  AUTORIZADO
+  COMPLETADO
+  FALLIDO
+  REEMBOLSADO
+}
+
+enum Port {
+  BALBOA
+  CRISTOBAL
+  COLON
+}
+
+enum ProvisioningStatus {
+  SOLICITADO
+  CONFIRMADO
+  EN_PREPARACION
+  ENTREGADO
+  CANCELADO
+}
+
+model Vessel {
+  id        String                @id @default(cuid())
+  name      String
+  imo       String
+  flag      String
+  agent     String
+  userId    String?
+  requests  ProvisioningRequest[]
+  createdAt DateTime              @default(now())
+}
+
+model ProvisioningRequest {
+  id          String              @id @default(cuid())
+  reference   String              @unique
+  vessel      Vessel              @relation(fields: [vesselId], references: [id])
+  vesselId    String
+  port        Port
+  windowStart DateTime
+  windowEnd   DateTime
+  status      ProvisioningStatus  @default(SOLICITADO)
+  manifestRef String
+  taxExempt   Boolean             @default(true)
+  userId      String?
+  lines       ProvisioningLine[]
+  createdAt   DateTime            @default(now())
+}
+
+model ProvisioningLine {
+  id          String              @id @default(cuid())
+  request     ProvisioningRequest @relation(fields: [requestId], references: [id])
+  requestId   String
+  productId   String
+  productName String
+  unit        SaleUnit
+  quantity    Int
+}
+
+model Supplier {
+  id        String       @id @default(cuid())
+  name      String
+  type      SupplierType
+  province  String
+  verified  Boolean      @default(false)
+  ruc       String?
+  ratingAvg Float        @default(0)
+  products  Product[]
+  users     User[]
+  createdAt DateTime     @default(now())
+}
+
+model Product {
+  id              String          @id @default(cuid())
+  slug            String          @unique
+  nameEs          String
+  nameEn          String
+  category        ProductCategory
+  descriptionEs   String
+  descriptionEn   String
+  imageUrl        String
+  province        String
+  certifications  String[]
+  shipProvisioning Boolean        @default(false)
+  ratingAvg       Float           @default(0)
+  ratingCount     Int             @default(0)
+  supplier        Supplier        @relation(fields: [supplierId], references: [id])
+  supplierId      String
+  prices          ProductPrice[]
+  createdAt       DateTime        @default(now())
+}
+
+model ProductPrice {
+  id        String   @id @default(cuid())
+  product   Product  @relation(fields: [productId], references: [id])
+  productId String
+  unit      SaleUnit
+  priceUsd  Float
+  stock     Int      @default(0)
+
+  @@unique([productId, unit])
+}
+
+enum UserRole {
+  COMPRADOR
+  PROVEEDOR
+  REPARTIDOR
+  ADMIN
+}
+
+enum DriverStatus {
+  DISPONIBLE
+  EN_RUTA
+  INACTIVO
+}
+
+enum VehicleType {
+  MOTO
+  AUTO
+  VAN
+  CAMION
+}
+
+enum DeliveryStatus {
+  ASIGNADO
+  RECOGIDO
+  EN_RUTA
+  ENTREGADO
+  FALLIDO
+}
+
+model Driver {
+  id         String       @id @default(cuid())
+  userId     String       @unique
+  name       String
+  vehicle    VehicleType  @default(MOTO)
+  plate      String
+  status     DriverStatus @default(INACTIVO)
+  lat        Float?
+  lng        Float?
+  lastSeenAt DateTime?
+  deliveries Delivery[]
+  createdAt  DateTime     @default(now())
+}
+
+model Delivery {
+  id             String             @id @default(cuid())
+  order          Order              @relation(fields: [orderId], references: [id])
+  orderId        String             @unique
+  driver         Driver?            @relation(fields: [driverId], references: [id])
+  driverId       String?
+  status         DeliveryStatus     @default(ASIGNADO)
+  pickupAddress  String
+  dropoffAddress String
+  dropoffLat     Float?
+  dropoffLng     Float?
+  locations      DeliveryLocation[]
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+}
+
+model DeliveryLocation {
+  id         String   @id @default(cuid())
+  delivery   Delivery @relation(fields: [deliveryId], references: [id])
+  deliveryId String
+  lat        Float
+  lng        Float
+  at         DateTime @default(now())
+}
+
+model User {
+  id            String          @id @default(cuid())
+  email         String          @unique
+  passwordHash  String
+  name          String
+  phone         String?
+  role          UserRole        @default(COMPRADOR)
+  segment       CustomerSegment @default(B2C_HOGAR)
+  orders        Order[]
+  supplier      Supplier?       @relation(fields: [supplierId], references: [id])
+  supplierId    String?
+  refreshTokens RefreshToken[]
+  pushTokens    PushToken[]
+  /// FrutiGo Points acumulados (fidelización).
+  points        Int             @default(0)
+  createdAt     DateTime        @default(now())
+}
+
+model PushToken {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  /// Expo push token del dispositivo.
+  token     String   @unique
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  /// Hash SHA-256 del refresh token (nunca se guarda en claro).
+  tokenHash String   @unique
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Order {
+  id           String          @id @default(cuid())
+  reference    String          @unique
+  segment      CustomerSegment
+  status       OrderStatus     @default(PENDIENTE_PAGO)
+  deliveryType String
+  subtotalUsd  Float
+  loyaltyDiscountUsd Float      @default(0)
+  buyerFeeUsd  Float
+  deliveryUsd  Float
+  taxUsd       Float
+  totalUsd     Float
+  taxExempt    Boolean         @default(false)
+  lines        OrderLine[]
+  payment      Payment?
+  delivery     Delivery?
+  user         User?           @relation(fields: [userId], references: [id])
+  userId       String?
+  createdAt    DateTime        @default(now())
+}
+
+model OrderLine {
+  id            String   @id @default(cuid())
+  order         Order    @relation(fields: [orderId], references: [id])
+  orderId       String
+  productId     String
+  productNameEs String
+  productNameEn String
+  unit          SaleUnit
+  quantity      Int
+  unitPriceUsd  Float
+  subtotalUsd   Float
+}
+
+model Payment {
+  id           String        @id @default(cuid())
+  order        Order         @relation(fields: [orderId], references: [id])
+  orderId      String        @unique
+  method       PaymentMethod
+  amountUsd    Float
+  status       PaymentStatus @default(INICIADO)
+  cryptoAsset  String?
+  providerData Json?
+  createdAt    DateTime      @default(now())
+}

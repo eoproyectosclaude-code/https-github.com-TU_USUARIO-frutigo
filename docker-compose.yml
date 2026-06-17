@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: frutigo
+      POSTGRES_PASSWORD: frutigo
+      POSTGRES_DB: frutigo
+    ports:
+      - '5432:5432'
+    volumes:
+      - frutigo_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U frutigo']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://frutigo:frutigo@db:5432/frutigo?schema=public
+      PORT: '3000'
+      PUBLIC_URL: http://localhost:3000
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-cambia-esto}
+      JWT_EXPIRES_IN: 15m
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      # Pasarelas / Google: pásalas por tu .env o entorno de despliegue.
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      YAPPY_MERCHANT_ID: ${YAPPY_MERCHANT_ID:-}
+      YAPPY_SECRET_KEY: ${YAPPY_SECRET_KEY:-}
+      COINBASE_COMMERCE_API_KEY: ${COINBASE_COMMERCE_API_KEY:-}
+      COINBASE_COMMERCE_WEBHOOK_SECRET: ${COINBASE_COMMERCE_WEBHOOK_SECRET:-}
+      GOOGLE_CSE_API_KEY: ${GOOGLE_CSE_API_KEY:-}
+      GOOGLE_CSE_CX: ${GOOGLE_CSE_CX:-}
+    ports:
+      - '3000:3000'
+
+volumes:
+  frutigo_db:

@@ -1,0 +1,14 @@
+**/node_modules
+**/dist
+**/build
+**/.expo
+**/.expo-shared
+**/*.log
+**/.env
+**/.env.local
+.git
+.github
+coverage
+scripts/.state
+scripts/.secrets.json
+apps/mobile
