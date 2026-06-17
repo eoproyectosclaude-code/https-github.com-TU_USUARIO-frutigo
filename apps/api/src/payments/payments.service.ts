@@ -4,11 +4,12 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PAYMENT_GATEWAYS, type PaymentGateway } from './gateway.interface';
 import { LoyaltyService } from '../loyalty/loyalty.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { AdminGateway } from '../admin/admin.gateway';
 import type { CreateIntentDto } from './dto/create-intent.dto';
 
 /**
  * Orquesta el cobro: selecciona la pasarela según el método, crea la intención,
- * la persiste ligada al pedido y concilia el resultado vía webhook.
+ * la persiste ligada al pedido y concilia el resultado vía webhook (idempotente).
  */
 @Injectable()
 export class PaymentsService {
@@ -19,6 +20,7 @@ export class PaymentsService {
     private readonly prisma: PrismaService,
     private readonly loyalty: LoyaltyService,
     private readonly notifications: NotificationsService,
+    private readonly adminGateway: AdminGateway,
     @Inject(PAYMENT_GATEWAYS) gateways: PaymentGateway[],
   ) {
     for (const g of gateways) this.registry.set(g.method, g);
@@ -48,7 +50,6 @@ export class PaymentsService {
       throw new BadRequestException(`Método de pago no soportado: ${dto.method}`);
     }
 
-    // Persistir (o actualizar) el pago del pedido.
     const payment = await this.prisma.payment.upsert({
       where: { orderId: order.id },
       update: { method: dto.method as any, amountUsd: order.totalUsd, status: status as any, cryptoAsset: dto.cryptoAsset, providerData: { ...providerData, providerRef } },
@@ -105,7 +106,6 @@ export class PaymentsService {
 
     if (fulfill) {
       await this.prisma.order.update({ where: { id: order.id }, data: { status: 'PAGADO' } });
-      // Descuenta los puntos canjeados y otorga los nuevos por el pago.
       await this.loyalty.redeemForOrder(order.userId, order.pointsRedeemed);
       await this.loyalty.awardForOrder(order.userId, order.totalUsd);
       void this.notifications.notifyUser(
@@ -114,6 +114,8 @@ export class PaymentsService {
         '¡Gracias! Tu pedido está en preparación y ganaste FrutiGo Points.',
         { orderId: order.id },
       );
+      // KPIs del dashboard de admin en tiempo real.
+      void this.adminGateway.broadcastMetrics();
       this.logger.log(`✅ Pedido ${order.reference} PAGADO vía ${method}`);
     } else if (result.status === 'COMPLETADO') {
       this.logger.log(`↩️  Webhook repetido para ${order.reference} — ignorado (idempotente)`);

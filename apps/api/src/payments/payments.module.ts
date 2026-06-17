@@ -8,9 +8,10 @@ import { VisaGateway } from './gateways/visa.gateway';
 import { CryptoGateway } from './gateways/crypto.gateway';
 import { LoyaltyModule } from '../loyalty/loyalty.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { AdminModule } from '../admin/admin.module';
 
 @Module({
-  imports: [LoyaltyModule, NotificationsModule],
+  imports: [LoyaltyModule, NotificationsModule, AdminModule],
   controllers: [PaymentsController],
   providers: [
     PaymentsService,
@@ -19,15 +20,8 @@ import { NotificationsModule } from '../notifications/notifications.module';
     VisaGateway,
     CryptoGateway,
     {
-      // Inyecta todas las pasarelas como un arreglo; añadir una nueva
-      // es solo registrarla aquí (Open/Closed Principle).
       provide: PAYMENT_GATEWAYS,
-      useFactory: (
-        stripe: StripeGateway,
-        yappy: YappyGateway,
-        visa: VisaGateway,
-        crypto: CryptoGateway,
-      ) => [stripe, yappy, visa, crypto],
+      useFactory: (stripe: StripeGateway, yappy: YappyGateway, visa: VisaGateway, crypto: CryptoGateway) => [stripe, yappy, visa, crypto],
       inject: [StripeGateway, YappyGateway, VisaGateway, CryptoGateway],
     },
   ],
