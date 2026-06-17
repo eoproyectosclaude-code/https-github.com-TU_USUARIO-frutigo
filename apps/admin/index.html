@@ -11,15 +11,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
-  :root{--green:#0F3D2E;--orange:#F26419;--yellow:#F6C615;--emerald:#34C759;
-    --card:rgba(20,33,58,.55);--line:rgba(255,255,255,.08);--txt:#EAF2EC;--muted:#93A4B8;}
+  :root{--green:#0F3D2E;--orange:#F26419;--yellow:#F6C615;--emerald:#34C759;--card:rgba(20,33,58,.55);--line:rgba(255,255,255,.08);--txt:#EAF2EC;--muted:#93A4B8;}
   *{box-sizing:border-box} html,body{margin:0;height:100%}
-  body{font-family:Inter,system-ui,sans-serif;color:var(--txt);
-    background:radial-gradient(1200px 800px at 80% -10%,#14513c55,transparent),radial-gradient(900px 700px at -10% 110%,#F2641933,transparent),#060b14;overflow-x:hidden}
+  body{font-family:Inter,system-ui,sans-serif;color:var(--txt);background:radial-gradient(1200px 800px at 80% -10%,#14513c55,transparent),radial-gradient(900px 700px at -10% 110%,#F2641933,transparent),#060b14;overflow-x:hidden}
   #bg3d{position:fixed;inset:0;z-index:0;opacity:.6}
   .wrap{position:relative;z-index:1;max-width:1240px;margin:0 auto;padding:24px}
   .brand{font-family:Poppins;font-weight:900;font-size:26px}.brand .go{color:var(--orange)}
-  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:10px}
   .pill{display:inline-flex;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:13px;backdrop-filter:blur(12px)}
   .btn{cursor:pointer;border:0;border-radius:12px;padding:10px 16px;font-weight:600;font-size:14px;color:#fff;background:linear-gradient(135deg,var(--orange),#ff8a4d);transition:transform .12s,box-shadow .2s}
   .btn:hover{transform:translateY(-1px);box-shadow:0 10px 30px #F2641955}
@@ -29,8 +27,7 @@
   .card .label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:1px}
   .card .value{font-family:Poppins;font-weight:700;font-size:30px;margin-top:6px;background:linear-gradient(135deg,#fff,#bfe7cf);-webkit-background-clip:text;background-clip:text;color:transparent}
   .card .value.accent{background:linear-gradient(135deg,var(--yellow),var(--orange));-webkit-background-clip:text;color:transparent}
-  .row2{grid-template-columns:1.4fr 1fr}
-  .maprow{grid-template-columns:2fr 1fr}
+  .row2{grid-template-columns:1.4fr 1fr}.maprow{grid-template-columns:2fr 1fr}
   h2{font-family:Poppins;font-weight:700;font-size:18px;margin:28px 0 12px}
   table{width:100%;border-collapse:collapse;font-size:14px}
   th{text-align:left;color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;padding:10px 8px;border-bottom:1px solid var(--line)}
@@ -51,16 +48,19 @@
   .card.flash{animation:pulse .9s ease-out;border-color:#34C75988}
   .live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#7CFFB0;margin-right:6px;animation:blink 1.4s infinite}
   @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-  #map{height:380px;border-radius:14px;overflow:hidden}
-  .leaflet-container{background:#0c1626}
+  #map{height:380px;border-radius:14px;overflow:hidden}.leaflet-container{background:#0c1626}
   .dlist{max-height:380px;overflow:auto;display:flex;flex-direction:column;gap:10px}
-  .ditem{background:#0c1626;border:1px solid var(--line);border-radius:12px;padding:12px}
-  .ditem .ref{font-family:Poppins;font-weight:600}
+  .ditem{background:#0c1626;border:1px solid var(--line);border-radius:12px;padding:12px}.ditem .ref{font-family:Poppins;font-weight:600}
+  #toasts{position:fixed;right:18px;bottom:18px;z-index:9;display:flex;flex-direction:column;gap:10px;max-width:340px}
+  .toast{background:var(--card);border:1px solid var(--emerald);border-left:4px solid var(--emerald);border-radius:12px;padding:12px 14px;backdrop-filter:blur(14px);box-shadow:0 10px 40px rgba(0,0,0,.4);animation:slidein .35s ease-out}
+  .toast.warning{border-color:var(--yellow);border-left-color:var(--yellow)}
+  @keyframes slidein{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
 </style>
 </head>
 <body>
 <canvas id="bg3d"></canvas>
 <div class="glow a"></div><div class="glow b"></div>
+<div id="toasts"></div>
 
 <div id="login">
   <div class="card">
@@ -78,20 +78,20 @@
 <div class="wrap" id="app" style="display:none">
   <div class="topbar">
     <div class="brand">FRUTI<span class="go">GO</span> <span class="muted" style="font-size:14px">· Admin</span></div>
-    <div style="display:flex;gap:10px;align-items:center">
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <span class="pill" id="srcPill">● conectando…</span>
+      <button class="btn ghost" onclick="dl('/admin/reports/orders.csv','pedidos.csv')">⬇ Pedidos CSV</button>
+      <button class="btn ghost" onclick="dl('/admin/reports/payments.csv','pagos.csv')">⬇ Pagos CSV</button>
       <button class="btn ghost" onclick="loadAll()">↻ Actualizar</button>
       <button class="btn ghost" onclick="logout()">Salir</button>
     </div>
   </div>
   <div class="grid kpis" id="kpis"></div>
-
   <h2>🗺️ Entregas activas <span class="muted" id="dcount" style="font-size:13px"></span></h2>
   <div class="grid maprow">
     <div class="card" style="padding:8px"><div id="map"></div></div>
     <div class="card"><div class="dlist" id="dlist"></div></div>
   </div>
-
   <div class="grid row2" style="margin-top:18px">
     <div class="card"><div class="label">Ingresos vs GMV</div><canvas id="barChart" height="150"></canvas></div>
     <div class="card"><div class="label">Estado de proveedores</div><canvas id="donutChart" height="150"></canvas></div>
@@ -111,6 +111,12 @@ const money=n=>new Intl.NumberFormat('es-PA',{style:'currency',currency:'USD'}).
 const $=s=>document.querySelector(s);
 const PTY=[8.98,-79.52];
 
+function toast(level,message){
+  const el=document.createElement('div');el.className='toast '+(level==='warning'?'warning':'');
+  el.textContent=message;$('#toasts').appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity .4s';setTimeout(()=>el.remove(),400);},6000);
+}
+
 (function init3D(){
   if(!window.THREE) return;
   const c=$('#bg3d'),r=new THREE.WebGLRenderer({canvas:c,alpha:true,antialias:true});
@@ -128,6 +134,13 @@ const PTY=[8.98,-79.52];
 
 async function apiGet(p){const r=await fetch(API+p,{headers:token?{Authorization:'Bearer '+token}:{}});if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}
 async function apiPatch(p,b){const r=await fetch(API+p,{method:'PATCH',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify(b)});if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}
+async function dl(path,fname){
+  try{
+    const r=await fetch(API+path,{headers:{Authorization:'Bearer '+token}});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const blob=await r.blob();const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=fname;a.click();URL.revokeObjectURL(u);
+  }catch(e){toast('warning','No se pudo descargar: '+e.message);}
+}
 
 async function login(){
   API=$('#apiBase').value.trim()||API;localStorage.setItem('fg_api',API);$('#loginErr').textContent='';
@@ -155,6 +168,7 @@ function connectRealtime(){
   adminSocket.on('connect',()=>{adminSocket.emit('subscribe');$('#srcPill').innerHTML='<span class="live-dot"></span>tiempo real';$('#srcPill').style.color='#7CFFB0';});
   adminSocket.on('metrics',m=>{renderKpis(m);renderCharts(m);flashKpis();});
   adminSocket.on('deliveries',renderDeliveries);
+  adminSocket.on('alert',a=>toast(a.level,a.message));
   adminSocket.on('disconnect',()=>{$('#srcPill').textContent='● reconectando…';$('#srcPill').style.color='#F6C615';});
 }
 function flashKpis(){document.querySelectorAll('#kpis .card').forEach(c=>{c.classList.remove('flash');void c.offsetWidth;c.classList.add('flash');});}
@@ -182,23 +196,14 @@ function renderCharts(d){
   donutChart=new Chart(dc,{type:'doughnut',data:{labels:['Verificados','Por verificar'],datasets:[{data:[d.verifiedSuppliers,d.pendingSuppliers],backgroundColor:['#1B7A4B','#F6C615'],borderWidth:0}]},options:{cutout:'68%',plugins:{legend:{labels:{color:'#EAF2EC'}}}}});
 }
 function renderDeliveries(list){
-  list=list||[];
-  $('#dcount').textContent='· '+list.length+' en curso';
+  list=list||[];$('#dcount').textContent='· '+list.length+' en curso';
   $('#dlist').innerHTML=list.length?list.map(d=>'<div class="ditem"><div class="ref">'+d.reference+' <span class="badge ok" style="font-size:10px">'+d.status+'</span></div><div class="muted" style="font-size:12px">🛵 '+((d.driver&&d.driver.name)||'—')+' · 📍 '+(d.dropoffAddress||'')+'</div></div>').join(''):'<div class="muted">No hay entregas activas ahora.</div>';
-  if(!map){return;}
+  if(!map)return;
   Object.values(driverMarkers).forEach(m=>map.removeLayer(m));driverMarkers={};
   const pts=[];
   list.forEach(d=>{
-    if(d.location){
-      const ic=L.divIcon({className:'',html:'<div style="font-size:22px">🛵</div>',iconSize:[24,24]});
-      const mk=L.marker([d.location.lat,d.location.lng],{icon:ic}).addTo(map).bindPopup('<b>'+d.reference+'</b><br>'+((d.driver&&d.driver.name)||'')+' · '+d.status);
-      driverMarkers['d_'+d.id]=mk;pts.push([d.location.lat,d.location.lng]);
-    }
-    if(d.dropoff){
-      const ic=L.divIcon({className:'',html:'<div style="font-size:20px">📍</div>',iconSize:[20,20]});
-      const mk=L.marker([d.dropoff.lat,d.dropoff.lng],{icon:ic}).addTo(map);
-      driverMarkers['t_'+d.id]=mk;pts.push([d.dropoff.lat,d.dropoff.lng]);
-    }
+    if(d.location){const ic=L.divIcon({className:'',html:'<div style="font-size:22px">🛵</div>',iconSize:[24,24]});const mk=L.marker([d.location.lat,d.location.lng],{icon:ic}).addTo(map).bindPopup('<b>'+d.reference+'</b><br>'+((d.driver&&d.driver.name)||'')+' · '+d.status);driverMarkers['d_'+d.id]=mk;pts.push([d.location.lat,d.location.lng]);}
+    if(d.dropoff){const ic=L.divIcon({className:'',html:'<div style="font-size:20px">📍</div>',iconSize:[20,20]});const mk=L.marker([d.dropoff.lat,d.dropoff.lng],{icon:ic}).addTo(map);driverMarkers['t_'+d.id]=mk;pts.push([d.dropoff.lat,d.dropoff.lng]);}
   });
   if(pts.length) map.fitBounds(pts,{padding:[40,40],maxZoom:13});
 }

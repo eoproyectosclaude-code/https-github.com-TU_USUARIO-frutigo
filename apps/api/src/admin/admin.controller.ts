@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Res, UseGuards } from '@nestjs/common';
+import type { Response } from 'express';
 import { IsBoolean } from 'class-validator';
 import { AdminService } from './admin.service';
 import { AdminGateway } from './admin.gateway';
@@ -6,36 +7,38 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 
-class SetVerifiedDto {
-  @IsBoolean() verified!: boolean;
-}
+class SetVerifiedDto { @IsBoolean() verified!: boolean; }
 
-/** Panel de administración — solo rol ADMIN. */
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN')
 export class AdminController {
-  constructor(
-    private readonly admin: AdminService,
-    private readonly gateway: AdminGateway,
-  ) {}
+  constructor(private readonly admin: AdminService, private readonly gateway: AdminGateway) {}
 
-  @Get('dashboard')
-  dashboard() { return this.admin.dashboard(); }
-
-  @Get('suppliers')
-  suppliers() { return this.admin.listSuppliers(); }
+  @Get('dashboard') dashboard() { return this.admin.dashboard(); }
+  @Get('suppliers') suppliers() { return this.admin.listSuppliers(); }
 
   @Patch('suppliers/:id/verify')
   async verify(@Param('id') id: string, @Body() dto: SetVerifiedDto) {
-    const result = await this.admin.setVerified(id, dto.verified);
+    const r = await this.admin.setVerified(id, dto.verified);
     void this.gateway.broadcastMetrics();
-    return result;
+    return r;
   }
 
-  @Get('payments')
-  payments() { return this.admin.listPayments(); }
+  @Get('payments') payments() { return this.admin.listPayments(); }
+  @Get('deliveries/active') activeDeliveries() { return this.admin.activeDeliveries(); }
 
-  @Get('deliveries/active')
-  activeDeliveries() { return this.admin.activeDeliveries(); }
+  @Get('reports/orders.csv')
+  async ordersCsv(@Res() res: Response) {
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="frutigo-pedidos.csv"');
+    res.end('﻿' + (await this.admin.ordersCsv()));
+  }
+
+  @Get('reports/payments.csv')
+  async paymentsCsv(@Res() res: Response) {
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="frutigo-pagos.csv"');
+    res.end('﻿' + (await this.admin.paymentsCsv()));
+  }
 }

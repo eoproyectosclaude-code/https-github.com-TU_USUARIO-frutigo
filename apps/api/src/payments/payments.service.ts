@@ -7,10 +7,6 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { AdminGateway } from '../admin/admin.gateway';
 import type { CreateIntentDto } from './dto/create-intent.dto';
 
-/**
- * Orquesta el cobro: selecciona la pasarela según el método, crea la intención,
- * la persiste ligada al pedido y concilia el resultado vía webhook (idempotente).
- */
 @Injectable()
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
@@ -37,15 +33,10 @@ export class PaymentsService {
 
     if (gateway) {
       const result = await gateway.createCharge({
-        orderId: order.id,
-        reference: order.reference,
-        amountUsd: order.totalUsd,
-        cryptoAsset: dto.cryptoAsset,
-        customerEmail: dto.customerEmail,
+        orderId: order.id, reference: order.reference, amountUsd: order.totalUsd,
+        cryptoAsset: dto.cryptoAsset, customerEmail: dto.customerEmail,
       });
-      status = result.status;
-      providerData = result.providerData;
-      providerRef = result.providerRef;
+      status = result.status; providerData = result.providerData; providerRef = result.providerRef;
     } else if (dto.method !== 'CASH' && dto.method !== 'ACH_SWIFT') {
       throw new BadRequestException(`Método de pago no soportado: ${dto.method}`);
     }
@@ -53,31 +44,17 @@ export class PaymentsService {
     const payment = await this.prisma.payment.upsert({
       where: { orderId: order.id },
       update: { method: dto.method as any, amountUsd: order.totalUsd, status: status as any, cryptoAsset: dto.cryptoAsset, providerData: { ...providerData, providerRef } },
-      create: {
-        orderId: order.id,
-        method: dto.method as any,
-        amountUsd: order.totalUsd,
-        status: status as any,
-        cryptoAsset: dto.cryptoAsset,
-        providerData: { ...providerData, providerRef },
-      },
+      create: { orderId: order.id, method: dto.method as any, amountUsd: order.totalUsd, status: status as any, cryptoAsset: dto.cryptoAsset, providerData: { ...providerData, providerRef } },
     });
 
     this.logger.log(`Intención ${order.reference} · ${dto.method} · ${status}`);
-
     return {
-      id: payment.id,
-      orderId: order.id,
-      method: dto.method,
-      amountUsd: order.totalUsd,
-      status,
-      providerData,
-      cryptoAsset: dto.cryptoAsset,
-      createdAt: payment.createdAt.toISOString(),
+      id: payment.id, orderId: order.id, method: dto.method, amountUsd: order.totalUsd,
+      status, providerData, cryptoAsset: dto.cryptoAsset, createdAt: payment.createdAt.toISOString(),
     };
   }
 
-  /** Procesa un webhook de proveedor: valida firma y concilia pago + pedido. */
+  /** Procesa un webhook de proveedor: valida firma y concilia pago + pedido (idempotente). */
   async handleWebhook(method: PaymentMethod, rawBody: Buffer | string, signature?: string) {
     const gateway = this.registry.get(method);
     if (!gateway) throw new BadRequestException('Pasarela desconocida');
@@ -87,35 +64,24 @@ export class PaymentsService {
       return { received: true, reconciled: false };
     }
 
-    const order = await this.prisma.order.findUnique({
-      where: { reference: result.reference },
-      include: { payment: true },
-    });
+    const order = await this.prisma.order.findUnique({ where: { reference: result.reference }, include: { payment: true } });
     if (!order) {
       this.logger.warn(`Webhook sin pedido: ${result.reference}`);
       return { received: true, reconciled: false };
     }
 
-    // Idempotencia: ¿debemos aplicar los efectos de "completado"? (evita dobles).
     const fulfill = shouldFulfill(order.payment?.status as PaymentStatus | undefined, result.status);
-
-    await this.prisma.payment.update({
-      where: { orderId: order.id },
-      data: { status: result.status as any },
-    });
+    await this.prisma.payment.update({ where: { orderId: order.id }, data: { status: result.status as any } });
 
     if (fulfill) {
       await this.prisma.order.update({ where: { id: order.id }, data: { status: 'PAGADO' } });
       await this.loyalty.redeemForOrder(order.userId, order.pointsRedeemed);
       await this.loyalty.awardForOrder(order.userId, order.totalUsd);
-      void this.notifications.notifyUser(
-        order.userId,
-        `Pago confirmado · ${order.reference}`,
-        '¡Gracias! Tu pedido está en preparación y ganaste FrutiGo Points.',
-        { orderId: order.id },
-      );
-      // KPIs del dashboard de admin en tiempo real.
+      void this.notifications.notifyUser(order.userId, `Pago confirmado · ${order.reference}`, '¡Gracias! Tu pedido está en preparación y ganaste FrutiGo Points.', { orderId: order.id });
       void this.adminGateway.broadcastMetrics();
+      if (order.totalUsd >= 500) {
+        this.adminGateway.emitAlert('success', `💰 Pedido grande pagado: ${order.reference} · $${order.totalUsd.toFixed(2)}`);
+      }
       this.logger.log(`✅ Pedido ${order.reference} PAGADO vía ${method}`);
     } else if (result.status === 'COMPLETADO') {
       this.logger.log(`↩️  Webhook repetido para ${order.reference} — ignorado (idempotente)`);

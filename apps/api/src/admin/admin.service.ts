@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { PRICING_CONFIG } from '@frutigo/shared';
+import { PRICING_CONFIG, toCsv } from '@frutigo/shared';
 import { PrismaService } from '../prisma/prisma.service';
 
-/** Comisión al proveedor sobre el subtotal (plan de negocios: 4%). */
 const SUPPLIER_FEE_RATE = 0.04;
 
 @Injectable()
@@ -17,23 +16,14 @@ export class AdminService {
       this.prisma.order.count(),
       this.prisma.order.findMany({ where: { status: 'PAGADO' } }),
     ]);
-
     const gmvUsd = round2(paidOrders.reduce((s, o) => s + o.totalUsd, 0));
     const buyerFees = paidOrders.reduce((s, o) => s + o.buyerFeeUsd, 0);
     const supplierFees = paidOrders.reduce((s, o) => s + o.subtotalUsd * SUPPLIER_FEE_RATE, 0);
-    const platformRevenueUsd = round2(buyerFees + supplierFees);
-
     return {
-      suppliers,
-      verifiedSuppliers,
-      pendingSuppliers: suppliers - verifiedSuppliers,
-      products,
-      totalOrders: orders,
-      paidOrders: paidOrders.length,
-      gmvUsd,
-      platformRevenueUsd,
-      buyerFeeRate: PRICING_CONFIG.buyerFeeRate,
-      supplierFeeRate: SUPPLIER_FEE_RATE,
+      suppliers, verifiedSuppliers, pendingSuppliers: suppliers - verifiedSuppliers, products,
+      totalOrders: orders, paidOrders: paidOrders.length, gmvUsd,
+      platformRevenueUsd: round2(buyerFees + supplierFees),
+      buyerFeeRate: PRICING_CONFIG.buyerFeeRate, supplierFeeRate: SUPPLIER_FEE_RATE,
     };
   }
 
@@ -42,10 +32,7 @@ export class AdminService {
       include: { _count: { select: { products: true } } },
       orderBy: [{ verified: 'asc' }, { name: 'asc' }],
     });
-    return suppliers.map((s) => ({
-      id: s.id, name: s.name, type: s.type, province: s.province,
-      verified: s.verified, ruc: s.ruc, products: s._count.products,
-    }));
+    return suppliers.map((s) => ({ id: s.id, name: s.name, type: s.type, province: s.province, verified: s.verified, ruc: s.ruc, products: s._count.products }));
   }
 
   setVerified(id: string, verified: boolean) {
@@ -55,16 +42,11 @@ export class AdminService {
   async listPayments() {
     const payments = await this.prisma.payment.findMany({
       include: { order: { select: { reference: true, totalUsd: true, status: true, segment: true } } },
-      orderBy: { createdAt: 'desc' },
-      take: 100,
+      orderBy: { createdAt: 'desc' }, take: 100,
     });
-    return payments.map((p) => ({
-      id: p.id, method: p.method, status: p.status, amountUsd: p.amountUsd,
-      reference: p.order.reference, orderStatus: p.order.status, segment: p.order.segment, createdAt: p.createdAt,
-    }));
+    return payments.map((p) => ({ id: p.id, method: p.method, status: p.status, amountUsd: p.amountUsd, reference: p.order.reference, orderStatus: p.order.status, segment: p.order.segment, createdAt: p.createdAt }));
   }
 
-  /** Entregas activas con última ubicación para el mapa del dashboard. */
   async activeDeliveries() {
     const deliveries = await this.prisma.delivery.findMany({
       where: { status: { in: ['ASIGNADO', 'RECOGIDO', 'EN_RUTA'] } },
@@ -73,8 +55,7 @@ export class AdminService {
         driver: { select: { name: true, vehicle: true, lat: true, lng: true } },
         locations: { orderBy: { at: 'desc' }, take: 1 },
       },
-      orderBy: { updatedAt: 'desc' },
-      take: 100,
+      orderBy: { updatedAt: 'desc' }, take: 100,
     });
     return deliveries.map((d) => {
       const last = d.locations[0];
@@ -89,8 +70,37 @@ export class AdminService {
       };
     });
   }
+
+  /** Reporte CSV de pedidos. */
+  async ordersCsv() {
+    const orders = await this.prisma.order.findMany({ include: { payment: true }, orderBy: { createdAt: 'desc' }, take: 1000 });
+    return toCsv(orders, [
+      { header: 'Referencia', value: (o) => o.reference },
+      { header: 'Fecha', value: (o) => o.createdAt.toISOString() },
+      { header: 'Segmento', value: (o) => o.segment },
+      { header: 'Estado', value: (o) => o.status },
+      { header: 'Subtotal', value: (o) => o.subtotalUsd.toFixed(2) },
+      { header: 'Descuento', value: (o) => o.loyaltyDiscountUsd.toFixed(2) },
+      { header: 'Credito', value: (o) => o.loyaltyCreditUsd.toFixed(2) },
+      { header: 'ITBMS', value: (o) => o.taxUsd.toFixed(2) },
+      { header: 'Total', value: (o) => o.totalUsd.toFixed(2) },
+      { header: 'Pago', value: (o) => o.payment?.method ?? '' },
+      { header: 'EstadoPago', value: (o) => o.payment?.status ?? '' },
+    ]);
+  }
+
+  /** Reporte CSV de pagos. */
+  async paymentsCsv() {
+    const list = await this.listPayments();
+    return toCsv(list, [
+      { header: 'Pedido', value: (p) => p.reference },
+      { header: 'Metodo', value: (p) => p.method },
+      { header: 'Estado', value: (p) => p.status },
+      { header: 'Monto', value: (p) => p.amountUsd.toFixed(2) },
+      { header: 'Segmento', value: (p) => p.segment },
+      { header: 'Fecha', value: (p) => p.createdAt.toISOString() },
+    ]);
+  }
 }
 
-function round2(n: number): number {
-  return Math.round((n + Number.EPSILON) * 100) / 100;
-}
+function round2(n: number): number { return Math.round((n + Number.EPSILON) * 100) / 100; }

@@ -3,7 +3,7 @@ import { Logger } from '@nestjs/common';
 import type { Server, Socket } from 'socket.io';
 import { AdminService } from './admin.service';
 
-/** Gateway de métricas y entregas del dashboard en tiempo real. */
+/** Gateway de métricas, entregas y alertas del dashboard en tiempo real. */
 @WebSocketGateway({ namespace: '/admin', cors: { origin: true } })
 export class AdminGateway implements OnGatewayConnection {
   @WebSocketServer() server!: Server;
@@ -34,5 +34,11 @@ export class AdminGateway implements OnGatewayConnection {
     if (!this.server) return;
     try { this.server.to('metrics').emit('deliveries', await this.admin.activeDeliveries()); }
     catch (err) { this.logger.warn(`entregas: ${(err as Error).message}`); }
+  }
+
+  /** Emite una alerta operativa (p. ej. pedido grande) al dashboard. */
+  emitAlert(level: 'info' | 'success' | 'warning', message: string) {
+    if (!this.server) return;
+    this.server.to('metrics').emit('alert', { level, message, at: new Date().toISOString() });
   }
 }
