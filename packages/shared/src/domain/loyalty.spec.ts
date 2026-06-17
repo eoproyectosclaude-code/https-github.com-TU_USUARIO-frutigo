@@ -1,4 +1,10 @@
-import { pointsForOrder, tierForPoints, pointsToNextTier } from './loyalty';
+import {
+  pointsForOrder,
+  tierForPoints,
+  pointsToNextTier,
+  creditFromPoints,
+  calcRedemption,
+} from './loyalty';
 
 describe('FrutiGo Points', () => {
   it('otorga 1 punto por USD entero', () => {
@@ -24,5 +30,34 @@ describe('FrutiGo Points', () => {
     expect(pointsToNextTier(0)).toEqual({ next: 'PLATA', remaining: 500 });
     expect(pointsToNextTier(1500)).toEqual({ next: 'ORO', remaining: 500 });
     expect(pointsToNextTier(9000)).toBeNull();
+  });
+
+  it('creditFromPoints: 100 pts = $1, redondea al múltiplo', () => {
+    expect(creditFromPoints(100)).toBe(1);
+    expect(creditFromPoints(250)).toBe(2); // solo 200 pts canjeables
+    expect(creditFromPoints(50)).toBe(0); // menos de un múltiplo
+    expect(creditFromPoints(-10)).toBe(0);
+  });
+
+  it('calcRedemption: canjea bajo el tope', () => {
+    // 500 pts = $5; tope 30% de $100 = $30 → no recorta
+    expect(calcRedemption(500, 500, 100)).toEqual({ pointsUsed: 500, creditUsd: 5 });
+  });
+
+  it('calcRedemption: aplica el tope del 30% del subtotal', () => {
+    // 5000 pts = $50, pero tope = $30 → recorta a 3000 pts
+    expect(calcRedemption(5000, 5000, 100)).toEqual({ pointsUsed: 3000, creditUsd: 30 });
+  });
+
+  it('calcRedemption: respeta saldo disponible', () => {
+    expect(calcRedemption(1000, 250, 1000)).toEqual({ pointsUsed: 200, creditUsd: 2 });
+  });
+
+  it('calcRedemption: sin puntos no canjea', () => {
+    expect(calcRedemption(100, 0, 100)).toEqual({ pointsUsed: 0, creditUsd: 0 });
+  });
+
+  it('calcRedemption: baja al múltiplo de 100', () => {
+    expect(calcRedemption(150, 150, 1000)).toEqual({ pointsUsed: 100, creditUsd: 1 });
   });
 });
