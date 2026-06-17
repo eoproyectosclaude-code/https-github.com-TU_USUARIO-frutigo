@@ -1,11 +1,9 @@
 name: CI
-
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-
 jobs:
   test:
     name: Pruebas del dominio
@@ -15,7 +13,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Instalar dependencias (solo dominio)
+      - name: Instalar dependencias
         working-directory: packages/shared
         run: npm install --no-workspaces --no-package-lock
       - name: Pruebas (Jest)
