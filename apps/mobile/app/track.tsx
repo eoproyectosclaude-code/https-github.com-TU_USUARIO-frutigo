@@ -1,10 +1,23 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Badge, Button, Card, fontSize, radius, spacing, typography } from '@frutigo/ui';
 import { useApp } from '../src/providers/AppProvider';
 import { api, type DeliveryTracking } from '../src/services/api';
 import { subscribeTracking } from '../src/services/socket';
+
+// react-native-maps no existe en web; se carga solo en nativo.
+let MapView: any = null;
+let Marker: any = null;
+if (Platform.OS !== 'web') {
+  try {
+    const maps = require('react-native-maps');
+    MapView = maps.default;
+    Marker = maps.Marker;
+  } catch {
+    /* mapa no disponible */
+  }
+}
 
 const STEPS = ['ASIGNADO', 'RECOGIDO', 'EN_RUTA', 'ENTREGADO'];
 
@@ -106,6 +119,35 @@ export default function TrackScreen() {
               );
             })}
           </Card>
+
+          {/* Mapa en vivo (nativo): repartidor + destino */}
+          {MapView && data.lastLocation ? (
+            <Card theme={theme} padded={false} style={{ overflow: 'hidden', height: 240 }}>
+              <MapView
+                style={{ flex: 1 }}
+                region={{
+                  latitude: data.lastLocation.lat,
+                  longitude: data.lastLocation.lng,
+                  latitudeDelta: 0.05,
+                  longitudeDelta: 0.05,
+                }}
+              >
+                <Marker
+                  coordinate={{ latitude: data.lastLocation.lat, longitude: data.lastLocation.lng }}
+                  title={data.driver?.name ?? (locale === 'es' ? 'Repartidor' : 'Driver')}
+                  description="🛵"
+                  pinColor="#F26419"
+                />
+                {data.dropoff ? (
+                  <Marker
+                    coordinate={{ latitude: data.dropoff.lat, longitude: data.dropoff.lng }}
+                    title={locale === 'es' ? 'Destino' : 'Drop-off'}
+                    pinColor="#1B7A4B"
+                  />
+                ) : null}
+              </MapView>
+            </Card>
+          ) : null}
 
           {data.lastLocation ? (
             <Card theme={theme}>

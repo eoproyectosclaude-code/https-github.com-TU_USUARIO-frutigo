@@ -178,6 +178,12 @@ export const api = {
 
   myOrders: () => request<Order[]>('/orders/mine', { auth: true }),
 
+  emailReceipt: (orderId: string, to?: string) =>
+    request<{ sent: boolean; to: string }>(`/orders/${orderId}/receipt/email`, { method: 'POST', body: { to }, auth: true }),
+
+  emailManifest: (requestId: string, to: string) =>
+    request<{ sent: boolean; to: string }>(`/provisioning/requests/${requestId}/manifest/email`, { method: 'POST', body: { to }, auth: true }),
+
   // --- Pagos ---
   createPaymentIntent: (body: CreateIntentRequest) =>
     request<PaymentIntent>('/payments/intents', { method: 'POST', body, auth: true }),

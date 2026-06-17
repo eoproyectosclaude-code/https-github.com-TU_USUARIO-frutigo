@@ -44,4 +44,10 @@ export class ProvisioningController {
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.end(buffer);
   }
+
+  /** Envía el manifiesto por correo a la naviera / agente. */
+  @Post('requests/:id/manifest/email')
+  emailManifest(@Param('id') id: string, @Body('to') to: string) {
+    return this.provisioning.emailManifest(id, to);
+  }
 }

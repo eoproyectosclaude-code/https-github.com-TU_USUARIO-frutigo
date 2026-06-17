@@ -7,6 +7,7 @@ import {
   type OrderLine,
 } from '@frutigo/shared';
 import { PrismaService } from '../prisma/prisma.service';
+import { MailService } from '../mail/mail.service';
 import { buildOrderReceiptPdf } from './order-pdf';
 import type { CreateOrderDto } from './dto/create-order.dto';
 
@@ -18,12 +19,14 @@ function deliveryCost(type: string): number {
 
 @Injectable()
 export class OrdersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mail: MailService,
+  ) {}
 
   async create(dto: CreateOrderDto, userId?: string) {
     if (dto.lines.length === 0) throw new BadRequestException('El pedido no tiene líneas');
 
-    // Recalcula precios desde la base (nunca confiar en el precio del cliente).
     const lines: OrderLine[] = [];
     for (const l of dto.lines) {
       const price = await this.prisma.productPrice.findUnique({
@@ -42,7 +45,6 @@ export class OrdersService {
       });
     }
 
-    // Descuento por nivel y saldo de puntos del usuario (server-authoritative).
     let loyaltyDiscountRate = 0;
     let availablePoints = 0;
     if (userId) {
@@ -97,18 +99,20 @@ export class OrdersService {
     });
   }
 
-  /** Genera el recibo del pedido en PDF. Solo el dueño o un ADMIN pueden descargarlo. */
-  async receiptPdf(id: string, requester: { id: string; role: string }) {
+  private async loadAuthorized(id: string, requester: { id: string; role: string }) {
     const order = await this.prisma.order.findUnique({
       where: { id },
-      include: { lines: true, payment: true },
+      include: { lines: true, payment: true, user: true },
     });
     if (!order) throw new NotFoundException('Pedido no encontrado');
     if (order.userId && order.userId !== requester.id && requester.role !== 'ADMIN') {
       throw new ForbiddenException('Este pedido no te pertenece');
     }
+    return order;
+  }
 
-    const buffer = await buildOrderReceiptPdf({
+  private toReceipt(order: any) {
+    return {
       reference: order.reference,
       createdAt: order.createdAt,
       segment: order.segment,
@@ -116,7 +120,7 @@ export class OrdersService {
       deliveryType: order.deliveryType,
       paymentMethod: order.payment?.method ?? null,
       paymentStatus: order.payment?.status ?? null,
-      lines: order.lines.map((l) => ({
+      lines: order.lines.map((l: any) => ({
         name: l.productNameEs,
         unit: l.unit,
         quantity: l.quantity,
@@ -131,7 +135,28 @@ export class OrdersService {
       pointsRedeemed: order.pointsRedeemed,
       loyaltyCreditUsd: order.loyaltyCreditUsd,
       totalUsd: order.totalUsd,
-    });
+    };
+  }
+
+  /** Recibo del pedido en PDF. Solo el dueño o un ADMIN. */
+  async receiptPdf(id: string, requester: { id: string; role: string }) {
+    const order = await this.loadAuthorized(id, requester);
+    const buffer = await buildOrderReceiptPdf(this.toReceipt(order));
     return { buffer, filename: `${order.reference}.pdf` };
+  }
+
+  /** Envía el recibo por correo al dueño del pedido (o al indicado). */
+  async emailReceipt(id: string, requester: { id: string; role: string }, to?: string) {
+    const order = await this.loadAuthorized(id, requester);
+    const target = to ?? order.user?.email;
+    if (!target) throw new BadRequestException('No hay correo destino para este pedido');
+    const buffer = await buildOrderReceiptPdf(this.toReceipt(order));
+    const res = await this.mail.send({
+      to: target,
+      subject: `Tu recibo FRUTI GO · ${order.reference}`,
+      text: `Adjuntamos el recibo de tu pedido ${order.reference}. ¡Gracias por comprar en FRUTI GO!`,
+      attachments: [{ filename: `${order.reference}.pdf`, content: buffer, contentType: 'application/pdf' }],
+    });
+    return { ...res, to: target };
   }
 }

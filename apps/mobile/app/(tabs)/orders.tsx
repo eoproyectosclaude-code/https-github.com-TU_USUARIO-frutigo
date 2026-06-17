@@ -29,6 +29,22 @@ export default function OrdersScreen() {
     }
   }
 
+  async function emailReceipt(o: Order) {
+    try {
+      const r = await api.emailReceipt(o.id);
+      Alert.alert(
+        locale === 'es' ? 'Recibo por correo' : 'Receipt by email',
+        r.sent
+          ? `${locale === 'es' ? 'Enviado a' : 'Sent to'} ${r.to}`
+          : locale === 'es'
+            ? 'Correo no configurado en el servidor (modo dev).'
+            : 'Email not configured on the server (dev mode).',
+      );
+    } catch (e) {
+      Alert.alert('Email', (e as Error).message);
+    }
+  }
+
   const load = useCallback(() => {
     if (!user) {
       setOrders([]);
@@ -86,6 +102,11 @@ export default function OrdersScreen() {
                 <Pressable onPress={() => receipt(item)}>
                   <Text style={{ color: theme.colors.primary, fontFamily: typography.bodyMedium, fontSize: fontSize.sm }}>
                     📄 {locale === 'es' ? 'Recibo PDF ›' : 'Receipt PDF ›'}
+                  </Text>
+                </Pressable>
+                <Pressable onPress={() => emailReceipt(item)}>
+                  <Text style={{ color: theme.colors.primary, fontFamily: typography.bodyMedium, fontSize: fontSize.sm }}>
+                    ✉️ {locale === 'es' ? 'Enviar correo' : 'Email'}
                   </Text>
                 </Pressable>
               </View>

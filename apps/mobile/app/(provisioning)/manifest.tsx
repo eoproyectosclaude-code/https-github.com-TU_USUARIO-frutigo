@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { PORTS, UNIT_DEFINITIONS, type SaleUnit } from '@frutigo/shared';
 import { Badge, Button, Card, fontSize, spacing, typography } from '@frutigo/ui';
@@ -22,6 +22,37 @@ export default function ManifestScreen() {
       Alert.alert('PDF', (e as Error).message);
     } finally {
       setDownloading(false);
+    }
+  }
+
+  async function sendEmail(to: string) {
+    if (!id || !to) return;
+    try {
+      const r = await api.emailManifest(id, to);
+      Alert.alert(
+        locale === 'es' ? 'Manifiesto enviado' : 'Manifest sent',
+        r.sent ? `${locale === 'es' ? 'Enviado a' : 'Sent to'} ${r.to}` : 'Correo no configurado (modo dev).',
+      );
+    } catch (e) {
+      Alert.alert('Email', (e as Error).message);
+    }
+  }
+
+  function promptEmail() {
+    if (Platform.OS === 'ios') {
+      Alert.prompt?.(
+        locale === 'es' ? 'Enviar manifiesto' : 'Send manifest',
+        locale === 'es' ? 'Correo de la naviera/agente' : 'Carrier/agent email',
+        (text) => text && sendEmail(text.trim()),
+      );
+    } else {
+      // Android no tiene Alert.prompt; usa el agente del buque si está, o pide en consola.
+      Alert.alert(
+        locale === 'es' ? 'Enviar manifiesto' : 'Send manifest',
+        locale === 'es'
+          ? 'Escribe el correo en el campo del agente y vuelve a intentar (o usa Descargar/Compartir).'
+          : 'Use Download/Share, or send from a device with email prompt.',
+      );
     }
   }
   const [loading, setLoading] = useState(true);
@@ -101,6 +132,13 @@ export default function ManifestScreen() {
         loading={downloading}
         onPress={exportPdf}
         style={{ marginTop: spacing.md }}
+      />
+      <Button
+        label={locale === 'es' ? '✉️ Enviar a la naviera por correo' : '✉️ Email to carrier'}
+        theme={theme}
+        variant="outline"
+        onPress={promptEmail}
+        style={{ marginTop: spacing.sm }}
       />
     </ScrollView>
   );

@@ -14,12 +14,12 @@ import { DeliveriesModule } from './deliveries/deliveries.module';
 import { RealtimeModule } from './realtime/realtime.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { LoyaltyModule } from './loyalty/loyalty.module';
+import { MailModule } from './mail/mail.module';
 import { HealthController } from './health.controller';
 import { LoggingInterceptor } from './common/logging.interceptor';
 
 @Module({
   imports: [
-    // Rate limiting global: 120 req/min por IP (protección anti-abuso/DoS).
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
     PrismaModule,
     AuthModule,
@@ -34,6 +34,7 @@ import { LoggingInterceptor } from './common/logging.interceptor';
     RealtimeModule,
     NotificationsModule,
     LoyaltyModule,
+    MailModule,
   ],
   controllers: [HealthController],
   providers: [

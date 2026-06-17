@@ -10,14 +10,12 @@ import { OptionalJwtAuthGuard } from '../auth/optional-jwt.guard';
 export class OrdersController {
   constructor(private readonly orders: OrdersService) {}
 
-  /** Crea un pedido. Si hay sesión, queda ligado al usuario (checkout invitado permitido). */
   @Post()
   @UseGuards(OptionalJwtAuthGuard)
   create(@Body() dto: CreateOrderDto, @CurrentUser() user?: AuthUser) {
     return this.orders.create(dto, user?.id);
   }
 
-  /** Pedidos del usuario autenticado. */
   @Get('mine')
   @UseGuards(JwtAuthGuard)
   mine(@CurrentUser() user: AuthUser) {
@@ -32,6 +30,13 @@ export class OrdersController {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.end(buffer);
+  }
+
+  /** Envía el recibo por correo (al dueño o a un destinatario indicado). */
+  @Post(':id/receipt/email')
+  @UseGuards(JwtAuthGuard)
+  emailReceipt(@Param('id') id: string, @CurrentUser() user: AuthUser, @Body('to') to?: string) {
+    return this.orders.emailReceipt(id, { id: user.id, role: user.role }, to);
   }
 
   @Get(':id')
