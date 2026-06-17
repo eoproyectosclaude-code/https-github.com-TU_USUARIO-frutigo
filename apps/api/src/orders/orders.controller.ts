@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Res, UseGuards } from '@nestjs/common';
+import type { Response } from 'express';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -21,6 +22,16 @@ export class OrdersController {
   @UseGuards(JwtAuthGuard)
   mine(@CurrentUser() user: AuthUser) {
     return this.orders.findByUser(user.id);
+  }
+
+  /** Recibo del pedido en PDF (solo dueño o ADMIN). */
+  @Get(':id/receipt.pdf')
+  @UseGuards(JwtAuthGuard)
+  async receipt(@Param('id') id: string, @CurrentUser() user: AuthUser, @Res() res: Response) {
+    const { buffer, filename } = await this.orders.receiptPdf(id, { id: user.id, role: user.role });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.end(buffer);
   }
 
   @Get(':id')

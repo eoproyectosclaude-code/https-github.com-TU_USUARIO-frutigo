@@ -1,10 +1,11 @@
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { formatUsd, type Order } from '@frutigo/shared';
 import { Badge, Button, Card, fontSize, spacing, typography } from '@frutigo/ui';
 import { useApp } from '../../src/providers/AppProvider';
 import { api } from '../../src/services/api';
+import { downloadAndShareReceipt } from '../../src/services/pdf';
 
 const STATUS_COLOR: Record<string, string> = {
   PAGADO: '#22C55E',
@@ -19,6 +20,14 @@ export default function OrdersScreen() {
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
+
+  async function receipt(o: Order) {
+    try {
+      await downloadAndShareReceipt(o.id, o.reference);
+    } catch (e) {
+      Alert.alert(locale === 'es' ? 'Recibo' : 'Receipt', (e as Error).message);
+    }
+  }
 
   const load = useCallback(() => {
     if (!user) {
@@ -66,13 +75,20 @@ export default function OrdersScreen() {
               <Text style={{ color: theme.colors.textMuted, fontFamily: typography.body, fontSize: fontSize.xs, marginTop: 4 }}>
                 {formatUsd((item as any).totalUsd ?? item.totals?.totalUsd ?? 0, locale)}
               </Text>
-              {item.status === 'EN_RUTA' || item.status === 'PAGADO' ? (
-                <Pressable onPress={() => router.push({ pathname: '/track', params: { orderId: item.id } })} style={{ marginTop: spacing.sm }}>
+              <View style={styles.actions}>
+                {item.status === 'EN_RUTA' || item.status === 'PAGADO' ? (
+                  <Pressable onPress={() => router.push({ pathname: '/track', params: { orderId: item.id } })}>
+                    <Text style={{ color: theme.colors.primary, fontFamily: typography.bodyMedium, fontSize: fontSize.sm }}>
+                      📍 {locale === 'es' ? 'Seguir entrega ›' : 'Track ›'}
+                    </Text>
+                  </Pressable>
+                ) : null}
+                <Pressable onPress={() => receipt(item)}>
                   <Text style={{ color: theme.colors.primary, fontFamily: typography.bodyMedium, fontSize: fontSize.sm }}>
-                    📍 {locale === 'es' ? 'Seguir entrega ›' : 'Track delivery ›'}
+                    📄 {locale === 'es' ? 'Recibo PDF ›' : 'Receipt PDF ›'}
                   </Text>
                 </Pressable>
-              ) : null}
+              </View>
             </Card>
           )}
         />
@@ -85,4 +101,5 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
   title: { fontFamily: typography.title, fontSize: fontSize.lg, marginTop: spacing.md, textAlign: 'center' },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  actions: { flexDirection: 'row', gap: spacing.lg, marginTop: spacing.sm },
 });

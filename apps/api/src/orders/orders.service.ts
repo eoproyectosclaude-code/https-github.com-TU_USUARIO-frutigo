@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import {
   calcLineSubtotal,
   calcOrderTotals,
@@ -7,6 +7,7 @@ import {
   type OrderLine,
 } from '@frutigo/shared';
 import { PrismaService } from '../prisma/prisma.service';
+import { buildOrderReceiptPdf } from './order-pdf';
 import type { CreateOrderDto } from './dto/create-order.dto';
 
 function deliveryCost(type: string): number {
@@ -94,5 +95,43 @@ export class OrdersService {
       include: { lines: true, payment: true },
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  /** Genera el recibo del pedido en PDF. Solo el dueño o un ADMIN pueden descargarlo. */
+  async receiptPdf(id: string, requester: { id: string; role: string }) {
+    const order = await this.prisma.order.findUnique({
+      where: { id },
+      include: { lines: true, payment: true },
+    });
+    if (!order) throw new NotFoundException('Pedido no encontrado');
+    if (order.userId && order.userId !== requester.id && requester.role !== 'ADMIN') {
+      throw new ForbiddenException('Este pedido no te pertenece');
+    }
+
+    const buffer = await buildOrderReceiptPdf({
+      reference: order.reference,
+      createdAt: order.createdAt,
+      segment: order.segment,
+      status: order.status,
+      deliveryType: order.deliveryType,
+      paymentMethod: order.payment?.method ?? null,
+      paymentStatus: order.payment?.status ?? null,
+      lines: order.lines.map((l) => ({
+        name: l.productNameEs,
+        unit: l.unit,
+        quantity: l.quantity,
+        unitPriceUsd: l.unitPriceUsd,
+        subtotalUsd: l.subtotalUsd,
+      })),
+      subtotalUsd: order.subtotalUsd,
+      loyaltyDiscountUsd: order.loyaltyDiscountUsd,
+      buyerFeeUsd: order.buyerFeeUsd,
+      deliveryUsd: order.deliveryUsd,
+      taxUsd: order.taxUsd,
+      pointsRedeemed: order.pointsRedeemed,
+      loyaltyCreditUsd: order.loyaltyCreditUsd,
+      totalUsd: order.totalUsd,
+    });
+    return { buffer, filename: `${order.reference}.pdf` };
   }
 }
