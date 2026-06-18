@@ -11,6 +11,7 @@ export default function AuthScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [referralCode, setReferralCode] = useState('');
   const [loading, setLoading] = useState(false);
 
   const isLogin = mode === 'login';
@@ -19,7 +20,7 @@ export default function AuthScreen() {
     setLoading(true);
     try {
       if (isLogin) await login(email, password);
-      else await register({ email, password, name });
+      else await register({ email, password, name, referralCode: referralCode.trim() || undefined });
       router.back();
     } catch (e) {
       Alert.alert(
@@ -82,6 +83,18 @@ export default function AuthScreen() {
           onChangeText={setPassword}
           style={inputStyle}
         />
+
+        {!isLogin ? (
+          <TextInput
+            placeholder={locale === 'es' ? 'Código de referido (opcional)' : 'Referral code (optional)'}
+            placeholderTextColor={theme.colors.textMuted}
+            autoCapitalize="characters"
+            autoCorrect={false}
+            value={referralCode}
+            onChangeText={(t) => setReferralCode(t.toUpperCase())}
+            style={inputStyle}
+          />
+        ) : null}
 
         <Button
           label={isLogin ? (locale === 'es' ? 'Entrar' : 'Sign in') : locale === 'es' ? 'Registrarme' : 'Sign up'}

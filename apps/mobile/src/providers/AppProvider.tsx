@@ -21,7 +21,7 @@ interface AppContextValue {
   toggleLocale: () => void;
   user: AuthUser | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (input: { email: string; password: string; name: string; segment?: string }) => Promise<void>;
+  register: (input: { email: string; password: string; name: string; segment?: string; referralCode?: string }) => Promise<void>;
   logout: () => Promise<void>;
 }
 

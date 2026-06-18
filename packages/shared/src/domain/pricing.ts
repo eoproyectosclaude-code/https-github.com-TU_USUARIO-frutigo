@@ -31,6 +31,8 @@ export interface CalcTotalsInput {
   pointsToRedeem?: number;
   /** Saldo de puntos disponible del comprador. */
   availablePoints?: number;
+  /** Saldo de crédito por referidos disponible (USD). */
+  referralCreditAvailableUsd?: number;
 }
 
 /** Calcula los totales: descuento de nivel, comisión, envío, ITBMS y canje de puntos. */
@@ -53,7 +55,13 @@ export function calcOrderTotals(input: CalcTotalsInput): OrderTotals {
   const loyaltyCreditUsd = round2(Math.min(redemption.creditUsd, grossTotal));
   const pointsRedeemed = loyaltyCreditUsd === redemption.creditUsd ? redemption.pointsUsed : 0;
 
-  const totalUsd = round2(grossTotal - loyaltyCreditUsd);
+  // Crédito por referidos: se aplica sobre lo que quede a pagar (tope = total restante y saldo disponible).
+  const afterPoints = round2(grossTotal - loyaltyCreditUsd);
+  const referralCreditUsd = round2(
+    Math.min(Math.max(input.referralCreditAvailableUsd ?? 0, 0), afterPoints),
+  );
+
+  const totalUsd = round2(afterPoints - referralCreditUsd);
   return {
     subtotalUsd,
     loyaltyDiscountUsd,
@@ -62,6 +70,7 @@ export function calcOrderTotals(input: CalcTotalsInput): OrderTotals {
     taxUsd,
     pointsRedeemed,
     loyaltyCreditUsd,
+    referralCreditUsd,
     totalUsd,
   };
 }

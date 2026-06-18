@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { shouldFulfill, type PaymentIntent, type PaymentMethod, type PaymentStatus } from '@frutigo/shared';
+import { REFERRAL, shouldFulfill, type PaymentIntent, type PaymentMethod, type PaymentStatus } from '@frutigo/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { PAYMENT_GATEWAYS, type PaymentGateway } from './gateway.interface';
 import { LoyaltyService } from '../loyalty/loyalty.service';
@@ -78,6 +78,7 @@ export class PaymentsService {
       await this.loyalty.redeemForOrder(order.userId, order.pointsRedeemed);
       await this.loyalty.awardForOrder(order.userId, order.totalUsd);
       void this.notifications.notifyUser(order.userId, `Pago confirmado · ${order.reference}`, '¡Gracias! Tu pedido está en preparación y ganaste FrutiGo Points.', { orderId: order.id });
+      await this.rewardReferrerOnFirstOrder(order.userId);
       void this.adminGateway.broadcastMetrics();
       if (order.totalUsd >= 500) {
         this.adminGateway.emitAlert('success', `💰 Pedido grande pagado: ${order.reference} · $${order.totalUsd.toFixed(2)}`);
@@ -90,5 +91,35 @@ export class PaymentsService {
     }
 
     return { received: true, reconciled: true, status: result.status, fulfilled: fulfill };
+  }
+
+  /**
+   * Recompensa al referente con $5 de crédito cuando su referido paga su PRIMER pedido.
+   * Idempotente: marca firstOrderPaid y solo premia una vez.
+   */
+  private async rewardReferrerOnFirstOrder(userId: string | null | undefined): Promise<void> {
+    if (!userId) return;
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, firstOrderPaid: true, referredById: true },
+    });
+    if (!user || user.firstOrderPaid) return;
+
+    await this.prisma.user.update({ where: { id: user.id }, data: { firstOrderPaid: true } });
+
+    if (!user.referredById) return;
+    const referrer = await this.prisma.user.update({
+      where: { id: user.referredById },
+      data: { referralCreditUsd: { increment: REFERRAL.referrerRewardUsd } },
+      select: { id: true, referralCreditUsd: true },
+    });
+    void this.notifications.notifyUser(
+      referrer.id,
+      '🎉 ¡Ganaste crédito por referido!',
+      `Tu referido completó su primer pedido. Sumaste $${REFERRAL.referrerRewardUsd.toFixed(2)} de crédito FRUTI GO.`,
+      {},
+    );
+    this.adminGateway.emitAlert('success', `🤝 Referido completado: +$${REFERRAL.referrerRewardUsd.toFixed(2)} de crédito`);
+    this.logger.log(`🤝 Recompensa de referido a ${referrer.id} (saldo $${referrer.referralCreditUsd.toFixed(2)})`);
   }
 }

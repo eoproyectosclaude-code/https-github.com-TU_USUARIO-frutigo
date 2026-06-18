@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PRICING_CONFIG, toCsv } from '@frutigo/shared';
+import { aggregateHeatmap, maxWeight, PRICING_CONFIG, toCsv, type GeoPoint } from '@frutigo/shared';
 import { PrismaService } from '../prisma/prisma.service';
 
 const SUPPLIER_FEE_RATE = 0.04;
@@ -69,6 +69,33 @@ export class AdminService {
         dropoff: d.dropoffLat != null && d.dropoffLng != null ? { lat: d.dropoffLat, lng: d.dropoffLng } : null,
       };
     });
+  }
+
+  /**
+   * Heatmap histórico de entregas: agrega los rastros GPS (DeliveryLocation) y los
+   * puntos de entrega (dropoff) de todas las entregas en una rejilla con peso.
+   */
+  async deliveriesHeatmap(days = 30) {
+    const since = new Date(Date.now() - days * 86_400_000);
+    const [locations, deliveries] = await Promise.all([
+      this.prisma.deliveryLocation.findMany({
+        where: { at: { gte: since } },
+        select: { lat: true, lng: true },
+        take: 20_000,
+      }),
+      this.prisma.delivery.findMany({
+        where: { createdAt: { gte: since }, dropoffLat: { not: null }, dropoffLng: { not: null } },
+        select: { dropoffLat: true, dropoffLng: true },
+        take: 5_000,
+      }),
+    ]);
+
+    const points: GeoPoint[] = [
+      ...locations.map((l) => ({ lat: l.lat, lng: l.lng })),
+      ...deliveries.map((d) => ({ lat: d.dropoffLat as number, lng: d.dropoffLng as number })),
+    ];
+    const heat = aggregateHeatmap(points);
+    return { days, total: points.length, max: maxWeight(heat), points: heat };
   }
 
   /** Reporte CSV de pedidos. */

@@ -10,6 +10,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
 <style>
   :root{--green:#0F3D2E;--orange:#F26419;--yellow:#F6C615;--emerald:#34C759;--card:rgba(20,33,58,.55);--line:rgba(255,255,255,.08);--txt:#EAF2EC;--muted:#93A4B8;}
   *{box-sizing:border-box} html,body{margin:0;height:100%}
@@ -87,7 +88,9 @@
     </div>
   </div>
   <div class="grid kpis" id="kpis"></div>
-  <h2>🗺️ Entregas activas <span class="muted" id="dcount" style="font-size:13px"></span></h2>
+  <h2>🗺️ Entregas activas <span class="muted" id="dcount" style="font-size:13px"></span>
+    <button class="btn ghost" id="heatBtn" style="float:right;font-size:12px;padding:6px 12px" onclick="toggleHeat()">🔥 Heatmap histórico</button>
+  </h2>
   <div class="grid maprow">
     <div class="card" style="padding:8px"><div id="map"></div></div>
     <div class="card"><div class="dlist" id="dlist"></div></div>
@@ -207,6 +210,31 @@ function renderDeliveries(list){
   });
   if(pts.length) map.fitBounds(pts,{padding:[40,40],maxZoom:13});
 }
+// --- Heatmap histórico de entregas ---
+let heatLayer=null,heatOn=false;
+function demoHeat(){
+  // Genera puntos sintéticos alrededor de Ciudad de Panamá para el modo demo.
+  const pts=[];const C=[8.98,-79.52];
+  for(let i=0;i<260;i++){const lat=C[0]+(Math.random()-0.5)*0.18,lng=C[1]+(Math.random()-0.5)*0.22;pts.push({lat,lng,weight:1+Math.floor(Math.random()*5)});}
+  return {points:pts,max:6,total:260,days:30};
+}
+async function toggleHeat(){
+  if(!map||!window.L||!L.heatLayer){alert('Mapa no disponible.');return;}
+  heatOn=!heatOn;
+  const btn=$('#heatBtn');
+  if(!heatOn){ if(heatLayer){map.removeLayer(heatLayer);heatLayer=null;} btn.classList.remove('primary'); btn.textContent='🔥 Heatmap histórico'; return; }
+  btn.textContent='⏳ Cargando…';
+  let data;
+  try{ data = token ? await apiGet('/admin/deliveries/heatmap?days=30') : demoHeat(); }
+  catch(e){ data = demoHeat(); }
+  const max=Math.max(1,data.max||1);
+  const heatPts=(data.points||[]).map(p=>[p.lat,p.lng,(p.weight||1)/max]);
+  if(heatLayer)map.removeLayer(heatLayer);
+  heatLayer=L.heatLayer(heatPts,{radius:25,blur:18,maxZoom:14,gradient:{0.2:'#1B7A4B',0.4:'#F6C615',0.7:'#F26419',1:'#E5342B'}}).addTo(map);
+  if(heatPts.length)map.fitBounds(heatPts.map(p=>[p[0],p[1]]),{padding:[40,40],maxZoom:13});
+  btn.classList.add('primary'); btn.textContent='🔥 Ocultar heatmap ('+(data.total||heatPts.length)+')';
+}
+
 function renderSuppliers(list,live){
   $('#supBody').innerHTML=list.map(s=>'<tr><td>'+s.name+'</td><td>'+s.type+'</td><td>'+s.province+'</td><td>'+s.products+'</td><td>'+(s.verified?'<span class="badge ok">✓ Verificado</span>':'<span class="badge warn">Pendiente</span>')+'</td><td><button class="switch '+(s.verified?'on':'off')+'" onclick="toggleSup(\''+s.id+'\','+(!s.verified)+','+live+')">'+(s.verified?'Quitar':'Verificar')+'</button></td></tr>').join('');
 }

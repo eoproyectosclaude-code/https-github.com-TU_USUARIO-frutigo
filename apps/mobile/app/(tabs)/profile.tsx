@@ -1,19 +1,40 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Button, Card, fontSize, radius, spacing, typography } from '@frutigo/ui';
 import { useApp } from '../../src/providers/AppProvider';
 import { api, type LoyaltySummary } from '../../src/services/api';
 
+type Me = Awaited<ReturnType<typeof api.me>>;
+
 export default function ProfileScreen() {
   const { theme, locale, toggleLocale, user, logout } = useApp();
   const router = useRouter();
   const [loyalty, setLoyalty] = useState<LoyaltySummary | null>(null);
+  const [me, setMe] = useState<Me | null>(null);
 
   useEffect(() => {
-    if (user) api.loyalty().then(setLoyalty).catch(() => setLoyalty(null));
-    else setLoyalty(null);
+    if (user) {
+      api.loyalty().then(setLoyalty).catch(() => setLoyalty(null));
+      api.me().then(setMe).catch(() => setMe(null));
+    } else {
+      setLoyalty(null);
+      setMe(null);
+    }
   }, [user]);
+
+  async function shareReferral() {
+    if (!me?.referralCode) return;
+    const msg =
+      locale === 'es'
+        ? `¡Únete a FRUTI GO con mi código ${me.referralCode} y obtén $5 de crédito en tu primer pedido! 🥭🚚`
+        : `Join FRUTI GO with my code ${me.referralCode} and get $5 credit on your first order! 🥭🚚`;
+    try {
+      await Share.share({ message: msg });
+    } catch {
+      Alert.alert(locale === 'es' ? 'No se pudo compartir' : 'Could not share');
+    }
+  }
 
   const rows = [
     { icon: '🏢', es: 'Mi empresa / segmento', en: 'My business / segment' },
@@ -96,6 +117,39 @@ export default function ProfileScreen() {
         </Card>
       ) : null}
 
+      {me?.referralCode ? (
+        <Card theme={theme} style={{ marginBottom: spacing.lg, borderWidth: 1, borderColor: theme.colors.primary }}>
+          <Text style={{ color: theme.colors.text, fontFamily: typography.subtitle, fontSize: fontSize.md }}>
+            {locale === 'es' ? '🤝 Invita y gana $5' : '🤝 Refer & earn $5'}
+          </Text>
+          <Text style={{ color: theme.colors.textMuted, fontFamily: typography.body, fontSize: fontSize.xs, marginTop: 2 }}>
+            {locale === 'es'
+              ? 'Comparte tu código. Ganas $5 cuando tu referido paga su primer pedido.'
+              : 'Share your code. You earn $5 when your referral pays their first order.'}
+          </Text>
+          <View style={[styles.codeBox, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+            <Text style={{ color: theme.colors.primary, fontFamily: typography.title, fontSize: fontSize.xl, letterSpacing: 3 }}>
+              {me.referralCode}
+            </Text>
+          </View>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.sm }}>
+            <Text style={{ color: theme.colors.textMuted, fontFamily: typography.body, fontSize: fontSize.xs }}>
+              {locale === 'es' ? `Referidos: ${me.referralsCount}` : `Referrals: ${me.referralsCount}`}
+            </Text>
+            <Text style={{ color: theme.colors.text, fontFamily: typography.bodyMedium, fontSize: fontSize.xs }}>
+              {locale === 'es' ? `Crédito: $${me.referralCreditUsd.toFixed(2)}` : `Credit: $${me.referralCreditUsd.toFixed(2)}`}
+            </Text>
+          </View>
+          <Button
+            label={locale === 'es' ? 'Compartir código' : 'Share code'}
+            theme={theme}
+            variant="primary"
+            style={{ marginTop: spacing.md, alignSelf: 'stretch' }}
+            onPress={shareReferral}
+          />
+        </Card>
+      ) : null}
+
       {rows.map((r, i) => (
         <Pressable
           key={i}
@@ -128,4 +182,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   rowLabel: { flex: 1, fontFamily: typography.bodyMedium, fontSize: fontSize.md },
+  codeBox: {
+    marginTop: spacing.sm,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+  },
 });

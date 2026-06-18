@@ -21,6 +21,11 @@ export class RegisterDto {
   @IsOptional()
   @IsEnum(SEGMENTS as unknown as object)
   segment?: CustomerSegment;
+
+  /** Código de referido de quien lo invitó (opcional). */
+  @IsOptional()
+  @IsString()
+  referralCode?: string;
 }
 
 export class LoginDto {

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Query, Res, UseGuards } from '@nestjs/common';
 import type { Response } from 'express';
 import { IsBoolean } from 'class-validator';
 import { AdminService } from './admin.service';
@@ -27,6 +27,12 @@ export class AdminController {
 
   @Get('payments') payments() { return this.admin.listPayments(); }
   @Get('deliveries/active') activeDeliveries() { return this.admin.activeDeliveries(); }
+
+  @Get('deliveries/heatmap')
+  heatmap(@Query('days') days?: string) {
+    const d = Math.min(Math.max(parseInt(days ?? '30', 10) || 30, 1), 365);
+    return this.admin.deliveriesHeatmap(d);
+  }
 
   @Get('reports/orders.csv')
   async ordersCsv(@Res() res: Response) {

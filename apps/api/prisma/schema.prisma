@@ -242,6 +242,16 @@ model User {
   pushTokens    PushToken[]
   /// FrutiGo Points acumulados (fidelización).
   points        Int             @default(0)
+  /// Código de referido propio (para compartir).
+  referralCode  String?         @unique
+  /// Quién refirió a este usuario.
+  referredBy    User?           @relation("Referrals", fields: [referredById], references: [id])
+  referredById  String?
+  referrals     User[]          @relation("Referrals")
+  /// Crédito acumulado por referidos (USD).
+  referralCreditUsd Float       @default(0)
+  /// Verdadero tras pagar el primer pedido (dispara recompensa al referente una sola vez).
+  firstOrderPaid Boolean        @default(false)
   createdAt     DateTime        @default(now())
 }
 
@@ -282,6 +292,7 @@ model Order {
   taxUsd       Float
   pointsRedeemed Int           @default(0)
   loyaltyCreditUsd Float       @default(0)
+  referralCreditUsd Float      @default(0)
   totalUsd     Float
   taxExempt    Boolean         @default(false)
   lines        OrderLine[]

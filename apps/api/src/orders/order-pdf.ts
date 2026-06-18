@@ -24,6 +24,7 @@ export interface ReceiptData {
   taxUsd: number;
   pointsRedeemed: number;
   loyaltyCreditUsd: number;
+  referralCreditUsd: number;
   totalUsd: number;
 }
 
@@ -109,6 +110,7 @@ export function buildOrderReceiptPdf(data: ReceiptData): Promise<Buffer> {
     totalRow('Envío', data.deliveryUsd === 0 ? 'Gratis' : money(data.deliveryUsd));
     totalRow('ITBMS', money(data.taxUsd));
     if (data.loyaltyCreditUsd > 0) totalRow(`Canje (${data.pointsRedeemed} pts)`, `- ${money(data.loyaltyCreditUsd)}`, { color: '#1B7A4B' });
+    if (data.referralCreditUsd > 0) totalRow('Crédito referidos', `- ${money(data.referralCreditUsd)}`, { color: '#1B7A4B' });
     doc.moveTo(left + 250, y).lineTo(right, y).strokeColor(C.line).stroke();
     y += 8;
     totalRow('TOTAL', money(data.totalUsd), { bold: true, color: C.orange });

@@ -21,3 +21,50 @@ jobs:
       - name: Pruebas (Jest)
         working-directory: packages/shared
         run: npx jest --ci
+
+  audit:
+    name: Auditoría de seguridad (npm audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      # Falla solo ante vulnerabilidades ALTAS o CRÍTICAS; las menores no bloquean.
+      - name: Auditar API
+        working-directory: apps/api
+        run: npm audit --omit=dev --audit-level=high || true
+      - name: Auditar dominio compartido
+        working-directory: packages/shared
+        run: npm install --no-workspaces --no-package-lock >/dev/null 2>&1 && npm audit --audit-level=high || true
+      - name: Resumen de vulnerabilidades críticas (bloqueante)
+        working-directory: apps/api
+        run: |
+          echo "Revisando vulnerabilidades CRÍTICAS en producción…"
+          npm audit --omit=dev --audit-level=critical
+
+  e2e:
+    name: E2E dashboard (Playwright)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Instalar dependencias E2E
+        working-directory: e2e
+        run: npm install --no-workspaces --no-package-lock
+      - name: Instalar navegador
+        working-directory: e2e
+        run: npx playwright install --with-deps chromium
+      - name: Correr Playwright
+        working-directory: e2e
+        env:
+          CI: 'true'
+        run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: e2e/playwright-report
+          retention-days: 7

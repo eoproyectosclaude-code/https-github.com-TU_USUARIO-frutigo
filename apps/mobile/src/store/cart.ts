@@ -28,11 +28,14 @@ interface CartState {
   availablePoints: number;
   /** Puntos a canjear en este pedido. */
   pointsToRedeem: number;
+  /** Saldo de crédito por referidos del usuario (USD). */
+  referralCreditAvailableUsd: number;
   setSegment: (s: CustomerSegment) => void;
   setDeliveryType: (d: DeliveryType) => void;
   setLoyaltyDiscount: (rate: number) => void;
   setAvailablePoints: (p: number) => void;
   setPointsToRedeem: (p: number) => void;
+  setReferralCredit: (usd: number) => void;
   addItem: (product: Product, unit: SaleUnit, quantity?: number) => void;
   updateQuantity: (key: string, quantity: number) => void;
   removeItem: (key: string) => void;
@@ -59,11 +62,13 @@ export const useCart = create<CartState>((set, get) => ({
   loyaltyDiscountRate: 0,
   availablePoints: 0,
   pointsToRedeem: 0,
+  referralCreditAvailableUsd: 0,
   setSegment: (segment) => set({ segment }),
   setDeliveryType: (deliveryType) => set({ deliveryType }),
   setLoyaltyDiscount: (loyaltyDiscountRate) => set({ loyaltyDiscountRate }),
   setAvailablePoints: (availablePoints) => set({ availablePoints }),
   setPointsToRedeem: (pointsToRedeem) => set({ pointsToRedeem }),
+  setReferralCredit: (referralCreditAvailableUsd) => set({ referralCreditAvailableUsd }),
 
   addItem: (product, unit, quantity = 1) => {
     const price = priceForUnit(product, unit);
@@ -103,11 +108,11 @@ export const useCart = create<CartState>((set, get) => ({
   },
 
   removeItem: (key) => set({ items: get().items.filter((i) => i.key !== key) }),
-  clear: () => set({ items: [], pointsToRedeem: 0 }),
+  clear: () => set({ items: [], pointsToRedeem: 0, referralCreditAvailableUsd: 0 }),
   count: () => get().items.reduce((n, i) => n + i.quantity, 0),
 
   totals: () => {
-    const { items, segment, deliveryType, loyaltyDiscountRate, pointsToRedeem, availablePoints } = get();
+    const { items, segment, deliveryType, loyaltyDiscountRate, pointsToRedeem, availablePoints, referralCreditAvailableUsd } = get();
     return calcOrderTotals({
       lines: items,
       deliveryUsd: deliveryCost(deliveryType),
@@ -115,6 +120,7 @@ export const useCart = create<CartState>((set, get) => ({
       loyaltyDiscountRate,
       pointsToRedeem,
       availablePoints,
+      referralCreditAvailableUsd,
     });
   },
 }));

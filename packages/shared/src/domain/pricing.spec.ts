@@ -85,6 +85,46 @@ describe('pricing', () => {
     const t = calcOrderTotals({ lines: [line(30)], deliveryUsd: 8.5, taxExempt: false });
     expect(t.pointsRedeemed).toBe(0);
     expect(t.loyaltyCreditUsd).toBe(0);
+    expect(t.referralCreditUsd).toBe(0);
+  });
+
+  it('crédito por referidos se aplica al total a pagar', () => {
+    // subtotal 100, exento → bruto 102. Crédito ref $5 → total 97.
+    const t = calcOrderTotals({
+      lines: [line(100)],
+      deliveryUsd: 0,
+      taxExempt: true,
+      referralCreditAvailableUsd: 5,
+    });
+    expect(t.referralCreditUsd).toBe(5);
+    expect(t.totalUsd).toBe(97);
+  });
+
+  it('el crédito por referidos no excede el total restante ni deja total negativo', () => {
+    // subtotal 5, exento → bruto 5.10. Saldo ref $100 → solo aplica 5.10, total 0.
+    const t = calcOrderTotals({
+      lines: [line(5)],
+      deliveryUsd: 0,
+      taxExempt: true,
+      referralCreditAvailableUsd: 100,
+    });
+    expect(t.referralCreditUsd).toBe(5.1);
+    expect(t.totalUsd).toBe(0);
+  });
+
+  it('combina canje de puntos y crédito por referidos', () => {
+    // subtotal 100, exento → bruto 102. Canje 200 pts = $2, ref $5 → total 95.
+    const t = calcOrderTotals({
+      lines: [line(100)],
+      deliveryUsd: 0,
+      taxExempt: true,
+      pointsToRedeem: 200,
+      availablePoints: 200,
+      referralCreditAvailableUsd: 5,
+    });
+    expect(t.loyaltyCreditUsd).toBe(2);
+    expect(t.referralCreditUsd).toBe(5);
+    expect(t.totalUsd).toBe(95);
   });
 
   it('formatUsd produce moneda', () => {

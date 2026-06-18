@@ -146,10 +146,18 @@ export const api = {
     name: string;
     phone?: string;
     segment?: string;
+    referralCode?: string;
   }) => request<AuthResponse>('/auth/register', { method: 'POST', body }),
 
   login: (body: { email: string; password: string }) =>
     request<AuthResponse>('/auth/login', { method: 'POST', body }),
+
+  me: () =>
+    request<{
+      id: string; email: string; name: string; role: string; segment: string;
+      supplierId?: string | null; points: number;
+      referralCode: string | null; referralCreditUsd: number; referralsCount: number;
+    }>('/auth/me', { auth: true }),
 
   // --- Catálogo ---
   products: (category?: string) =>

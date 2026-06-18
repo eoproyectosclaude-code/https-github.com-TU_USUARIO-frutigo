@@ -11,6 +11,8 @@ export * from "./domain/recommendations";
 export * from "./domain/loyalty";
 export * from "./domain/forecast";
 export * from "./domain/csv";
+export * from "./domain/referral";
+export * from "./domain/heatmap";
 
 // i18n
 export * from "./i18n/translations";

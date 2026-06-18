@@ -38,6 +38,8 @@ export interface OrderTotals {
   pointsRedeemed: number;
   /** Crédito en USD aplicado por canje de puntos. */
   loyaltyCreditUsd: number;
+  /** Crédito en USD aplicado del saldo de referidos. */
+  referralCreditUsd: number;
   totalUsd: number;
 }
 

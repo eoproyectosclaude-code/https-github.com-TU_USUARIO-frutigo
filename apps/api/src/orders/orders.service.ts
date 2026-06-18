@@ -47,11 +47,16 @@ export class OrdersService {
 
     let loyaltyDiscountRate = 0;
     let availablePoints = 0;
+    let referralCreditAvailableUsd = 0;
     if (userId) {
-      const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { points: true } });
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { points: true, referralCreditUsd: true },
+      });
       if (user) {
         loyaltyDiscountRate = tierForPoints(user.points).perkDiscount;
         availablePoints = user.points;
+        referralCreditAvailableUsd = user.referralCreditUsd;
       }
     }
 
@@ -62,10 +67,11 @@ export class OrdersService {
       loyaltyDiscountRate,
       pointsToRedeem: dto.pointsToRedeem ?? 0,
       availablePoints,
+      referralCreditAvailableUsd,
     });
 
     const reference = `FG-${Date.now()}`;
-    return this.prisma.order.create({
+    const order = await this.prisma.order.create({
       data: {
         reference,
         segment: dto.segment as any,
@@ -79,12 +85,23 @@ export class OrdersService {
         taxUsd: totals.taxUsd,
         pointsRedeemed: totals.pointsRedeemed,
         loyaltyCreditUsd: totals.loyaltyCreditUsd,
+        referralCreditUsd: totals.referralCreditUsd,
         totalUsd: totals.totalUsd,
         userId: userId ?? null,
         lines: { create: lines },
       },
       include: { lines: true },
     });
+
+    // Descuenta el crédito de referido aplicado del saldo del comprador (atómico, sin bajar de 0).
+    if (userId && totals.referralCreditUsd > 0) {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { referralCreditUsd: { decrement: totals.referralCreditUsd } },
+      });
+    }
+
+    return order;
   }
 
   findOne(id: string) {
@@ -134,6 +151,7 @@ export class OrdersService {
       taxUsd: order.taxUsd,
       pointsRedeemed: order.pointsRedeemed,
       loyaltyCreditUsd: order.loyaltyCreditUsd,
+      referralCreditUsd: order.referralCreditUsd,
       totalUsd: order.totalUsd,
     };
   }

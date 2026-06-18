@@ -27,7 +27,8 @@ export default function CheckoutScreen() {
   const router = useRouter();
   const {
     items, segment, deliveryType, pointsToRedeem, availablePoints,
-    setSegment, setDeliveryType, setLoyaltyDiscount, setAvailablePoints, setPointsToRedeem, clear,
+    setSegment, setDeliveryType, setLoyaltyDiscount, setAvailablePoints, setPointsToRedeem,
+    setReferralCredit, clear,
   } = useCart();
   const totals = useCart((s) => s.totals());
   const { user } = useApp();
@@ -41,6 +42,7 @@ export default function CheckoutScreen() {
       setLoyaltyDiscount(0);
       setAvailablePoints(0);
       setPointsToRedeem(0);
+      setReferralCredit(0);
       return;
     }
     api
@@ -53,6 +55,10 @@ export default function CheckoutScreen() {
         setLoyaltyDiscount(0);
         setAvailablePoints(0);
       });
+    api
+      .me()
+      .then((m) => setReferralCredit(m.referralCreditUsd ?? 0))
+      .catch(() => setReferralCredit(0));
   }, [user]);
 
   /** Presenta el Payment Sheet nativo de Stripe. Devuelve true si el pago se completó. */
@@ -211,6 +217,13 @@ export default function CheckoutScreen() {
             <SummaryRow
               label={locale === 'es' ? `🎁 Canje (${totals.pointsRedeemed} pts)` : `🎁 Redeem (${totals.pointsRedeemed} pts)`}
               value={`- ${formatUsd(totals.loyaltyCreditUsd, locale)}`}
+              theme={theme}
+            />
+          ) : null}
+          {totals.referralCreditUsd > 0 ? (
+            <SummaryRow
+              label={locale === 'es' ? '🤝 Crédito referidos' : '🤝 Referral credit'}
+              value={`- ${formatUsd(totals.referralCreditUsd, locale)}`}
               theme={theme}
             />
           ) : null}
