@@ -1,6 +1,11 @@
 node_modules/
 dist/
 build/
+
+# Artefactos JS compilados dentro del código fuente TS (no deben versionarse).
+packages/*/src/**/*.js
+packages/*/src/**/*.d.ts
+packages/*/src/**/*.js.map
 .expo/
 .expo-shared/
 *.log

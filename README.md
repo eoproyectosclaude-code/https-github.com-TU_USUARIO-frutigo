@@ -89,25 +89,47 @@ móvil y el backend. Una sola fuente de verdad.
 docker compose up --build      # Postgres + API en http://localhost:3000 · docs en /docs
 ```
 
+El servicio `api` incluye un `healthcheck` contra `/health/ready`, y `db` usa
+`pg_isready`, de modo que el arranque queda orquestado (el API espera a la BD sana).
+
 ### Local (Node)
 
-Requisitos: Node 20+, PostgreSQL, y la app **Expo Go** en tu teléfono (o un emulador).
+Requisitos: Node 20+, la app **Expo Go** en tu teléfono (o un emulador) y una
+base PostgreSQL. La forma más simple de tener la base es levantar **solo** el
+contenedor de Postgres con Docker:
 
 ```bash
+# 0. Base de datos (solo Postgres, en segundo plano)
+docker compose up -d db        # expone localhost:5432 (usuario/clave/DB: frutigo)
+
 # 1. Instalar dependencias (raíz del monorepo)
-npm install
+npm install                    # compila también @frutigo/shared (script "prepare")
 
 # 2. Backend
 cd apps/api
-cp .env.example .env          # configura DATABASE_URL y llaves sandbox
+cp .env.example .env           # DATABASE_URL=postgresql://frutigo:frutigo@localhost:5432/frutigo?schema=public
 npm run prisma:generate
-npm run prisma:migrate         # crea las tablas
-npm run seed                   # carga productos panameños demo
-npm run start:dev              # API en http://localhost:3000
+npm run prisma:migrate          # crea las tablas (nombre sugerido: init)
+npm run seed                    # carga productos panameños demo
+npm run start:dev               # API en http://localhost:3000
 
 # 3. App móvil (en otra terminal)
 cd apps/mobile
-npm run start                  # escanea el QR con Expo Go
+npm run start                   # escanea el QR con Expo Go
+```
+
+> **Monorepo:** el paquete `@frutigo/shared` se consume **compilado** (`dist/`).
+> `npm install` lo construye vía su script `prepare`; si editas código en
+> `packages/shared`, recompílalo con `npm run build:shared` antes de arrancar el API.
+
+### Pruebas
+
+```bash
+# Dominio (lógica pura, 68 tests Jest)
+cd packages/shared && npm test
+
+# E2E del dashboard admin (Playwright, modo demo sin backend)
+cd e2e && npm install && npx playwright install --with-deps chromium && npm test
 ```
 
 > La app funciona **sin backend** para demo: el servicio de pagos cae a un modo
@@ -148,6 +170,29 @@ scripts\exportar-github.bat     (Windows)   ·   bash scripts/exportar-github.sh
   Requisitos: teléfono y PC en la misma WiFi, y la app **Expo Go** instalada.
 - **exportar-github**: en un comando hace `commit` + `push` a tu repo usando tu token
   (guardado de forma segura). Acepta un mensaje opcional: `exportar-github.bat "mi mensaje"`.
+
+---
+
+## Novedades recientes
+
+- **Programa de referidos ($5).** Cada usuario recibe un código propio determinista
+  (sin caracteres ambiguos). Al registrarse con el código de otro se vincula al
+  referente; cuando el referido paga su **primer** pedido, el referente gana $5 de
+  crédito (idempotente). El crédito se aplica como descuento en el checkout y se
+  refleja en el recibo. Dominio puro con tests (`referral.ts`).
+- **Crédito de referido en el checkout.** `calcOrderTotals` aplica el saldo tras el
+  canje de puntos, capado al total restante (nunca deja total negativo), y el backend
+  descuenta el saldo del comprador de forma atómica al crear el pedido.
+- **Heatmap histórico de entregas.** Endpoint admin `GET /admin/deliveries/heatmap`
+  que agrega rastros GPS + puntos de entrega en una rejilla ponderada (`heatmap.ts`,
+  con tests), visualizado como capa de calor Leaflet conmutable en el dashboard.
+- **Readiness de producción.** `GET /health/ready` mide la latencia de PostgreSQL y
+  responde **503** si la BD no está disponible (apto para balanceadores/Kubernetes);
+  `GET /health` reporta versión y uptime.
+- **Pruebas E2E (Playwright).** Suite del dashboard admin en modo demo (sin backend)
+  en `e2e/`, integrada al CI junto a `npm audit` (alto/crítico).
+- **Cobertura de dominio:** 68 tests Jest en 12 suites cubren precios, fidelización,
+  referidos, geo/entregas, heatmap, forecast, recomendaciones, CSV y unidades.
 
 ---
 

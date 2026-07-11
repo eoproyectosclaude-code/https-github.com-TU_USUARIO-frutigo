@@ -58,7 +58,7 @@ export class VisaGateway implements PaymentGateway {
       handled: true,
       reference: payload.orderId,
       providerRef: payload.transactionId,
-      status: map[payload.status] ?? 'PENDIENTE',
+      status: map[payload.status ?? ''] ?? 'PENDIENTE',
     };
   }
 }

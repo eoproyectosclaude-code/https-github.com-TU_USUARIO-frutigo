@@ -7,9 +7,14 @@
     "emitDecoratorMetadata": true,
     "target": "ES2021",
     "outDir": "dist",
+    "rootDir": "src",
+    "baseUrl": ".",
+    "paths": {
+      "@frutigo/shared": ["../../packages/shared/dist"]
+    },
     "declaration": false,
     "strictPropertyInitialization": false,
     "types": ["node"]
   },
-  "include": ["src/**/*", "prisma/**/*"]
+  "include": ["src/**/*"]
 }
