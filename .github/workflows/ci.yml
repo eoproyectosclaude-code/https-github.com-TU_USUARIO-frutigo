@@ -22,6 +22,20 @@ jobs:
         working-directory: packages/shared
         run: npx jest --ci
 
+  api-e2e:
+    name: Integración del API (supertest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Instalar dependencias (workspaces)
+        run: npm install
+      - name: Pruebas de integración del API
+        working-directory: apps/api
+        run: npm run test:e2e
+
   audit:
     name: Auditoría de seguridad (npm audit)
     runs-on: ubuntu-latest

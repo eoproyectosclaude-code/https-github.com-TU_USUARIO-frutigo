@@ -10,7 +10,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "seed": "ts-node prisma/seed.ts",
-    "make-admin": "ts-node prisma/make-admin.ts"
+    "make-admin": "ts-node prisma/make-admin.ts",
+    "test:e2e": "jest --config test/jest-e2e.json"
   },
   "dependencies": {
     "@frutigo/shared": "*",
@@ -40,13 +41,19 @@
   },
   "devDependencies": {
     "@nestjs/cli": "^10.4.2",
+    "@nestjs/testing": "^10.4.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/express": "^4.17.21",
     "@types/node": "^20.14.0",
     "@types/nodemailer": "^6.4.15",
     "@types/passport-jwt": "^4.0.1",
     "@types/pdfkit": "^0.13.4",
+    "@types/supertest": "^6.0.2",
+    "@types/jest": "^29.5.12",
+    "jest": "^29.7.0",
     "prisma": "^5.18.0",
+    "supertest": "^7.0.0",
+    "ts-jest": "^29.2.4",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4"
   }
