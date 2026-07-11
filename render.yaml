@@ -1,0 +1,61 @@
+# Blueprint de despliegue de FRUTI GO en Render (https://render.com).
+# Provisiona la API (desde el Dockerfile) + una base PostgreSQL gestionada,
+# cableando DATABASE_URL automáticamente. Deploy: New → Blueprint → conecta el repo.
+#
+# Los secretos de pasarelas/Google se marcan `sync: false`: se configuran una vez
+# en el panel de Render (Environment) y no se versionan.
+
+databases:
+  - name: frutigo-db
+    databaseName: frutigo
+    user: frutigo
+    plan: free
+
+services:
+  - type: web
+    name: frutigo-api
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    plan: free
+    region: oregon
+    healthCheckPath: /health/ready
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: frutigo-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true # Render genera un secreto fuerte y estable.
+      - key: JWT_EXPIRES_IN
+        value: 15m
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: APP_VERSION
+        value: 0.1.0
+      # PUBLIC_URL se rellena tras el primer deploy con la URL pública del servicio.
+      - key: PUBLIC_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      # --- Pasarelas de pago (configúralas como secretos en Render) ---
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: YAPPY_MERCHANT_ID
+        sync: false
+      - key: YAPPY_SECRET_KEY
+        sync: false
+      - key: COINBASE_COMMERCE_API_KEY
+        sync: false
+      - key: COINBASE_COMMERCE_WEBHOOK_SECRET
+        sync: false
+      # --- Google Custom Search (imágenes de producto) ---
+      - key: GOOGLE_CSE_API_KEY
+        sync: false
+      - key: GOOGLE_CSE_CX
+        sync: false

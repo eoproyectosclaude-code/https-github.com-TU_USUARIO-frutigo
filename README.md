@@ -135,6 +135,21 @@ cd e2e && npm install && npx playwright install --with-deps chromium && npm test
 > La app funciona **sin backend** para demo: el servicio de pagos cae a un modo
 > offline simulado si la API no está levantada.
 
+### Despliegue en la nube (Render)
+
+El repo incluye un blueprint `render.yaml` que provisiona la **API** (desde el
+Dockerfile) y una **base PostgreSQL** gestionada, cableando `DATABASE_URL`
+automáticamente y generando un `JWT_SECRET` seguro.
+
+1. En [Render](https://render.com): **New → Blueprint** y conecta este repositorio.
+2. Render detecta `render.yaml`, crea la base y el servicio web, y hace deploy.
+3. Configura los secretos (`sync: false`) en **Environment**: llaves de Stripe/Yappy/
+   Coinbase, Google CSE, `PUBLIC_URL` (la URL pública del servicio) y `CORS_ORIGINS`.
+
+El contenedor aplica migraciones (`prisma migrate deploy`) al arrancar y expone
+`/health/ready` como health check. Con `autoDeploy: true`, cada push a `main` que
+pase el CI se publica automáticamente.
+
 ### Script de actualización y publicación (`scripts/`)
 
 Menú interactivo para revisar, actualizar y publicar el proyecto sin repetir todo.
