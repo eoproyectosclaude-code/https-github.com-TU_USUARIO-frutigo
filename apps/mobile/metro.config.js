@@ -9,8 +9,8 @@ const workspaceRoot = path.resolve(projectRoot, '../..');
 
 const config = getDefaultConfig(projectRoot);
 
-// 1. Vigila el código de todo el monorepo (incluye packages/*).
-config.watchFolders = [workspaceRoot];
+// 1. Vigila el código de todo el monorepo (agrega, no reemplaza, los defaults de Expo).
+config.watchFolders = Array.from(new Set([...(config.watchFolders ?? []), workspaceRoot]));
 
 // 2. Resuelve node_modules desde la app y desde la raíz del monorepo.
 config.resolver.nodeModulesPaths = [
