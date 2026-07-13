@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FRUTI GO · App Móvil</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{--ink:#07130D;--green:#0F3D2E;--green2:#1B7A4B;--lime:#34C759;--orange:#F26419;--gold:#F6C615;--muted:#8AA595;--card:rgba(255,255,255,.06)}
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{font-family:'Inter',sans-serif;background:var(--ink);color:#EAF6EE;overflow-x:hidden;line-height:1.6}
+  h1,h2,h3,.brand{font-family:'Sora';letter-spacing:-.02em}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 26px}
+  .go{color:var(--gold)}
+  .eyebrow{color:var(--lime);font-weight:600;font-size:13px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:12px}
+  .reveal{opacity:0;transform:translateY(30px);transition:.8s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+  section{padding:100px 0}
+  h2.big{font-size:clamp(28px,4.2vw,48px);font-weight:800;margin-bottom:14px;line-height:1.1}
+  .sub{color:#CFEAD9;font-size:17px;max-width:620px;margin-bottom:40px}
+
+  /* HERO */
+  .hero{padding:110px 0 40px;overflow:hidden;position:relative;
+    background:radial-gradient(900px 600px at 80% -10%,rgba(52,199,89,.22),transparent 60%),
+               radial-gradient(700px 500px at 0% 120%,rgba(242,100,25,.16),transparent),var(--ink)}
+  .hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:30px;align-items:center}
+  .brand{font-size:23px;font-weight:800}
+  .hero h1{font-size:clamp(38px,5.6vw,66px);font-weight:800;line-height:1.04;margin-top:22px}
+  .hero p.lead{color:#CFEAD9;font-size:19px;margin:20px 0 28px;max-width:520px}
+  .badges{display:flex;gap:12px;flex-wrap:wrap}
+  .badge{display:flex;gap:10px;align-items:center;background:var(--card);border:1px solid rgba(255,255,255,.14);padding:11px 18px;border-radius:14px;font-size:13px}
+
+  /* PHONE */
+  .phones{display:flex;justify-content:center;align-items:flex-end;gap:-20px;position:relative}
+  .phone{width:250px;height:520px;background:#050C08;border-radius:38px;padding:12px;
+    border:1px solid rgba(255,255,255,.14);box-shadow:0 40px 90px -30px rgba(0,0,0,.8);position:relative}
+  .phone::before{content:"";position:absolute;top:20px;left:50%;transform:translateX(-50%);width:90px;height:20px;background:#050C08;border-radius:0 0 14px 14px;z-index:3}
+  .screen{width:100%;height:100%;border-radius:28px;overflow:hidden;background:linear-gradient(180deg,#0B1F16,#07130D);position:relative}
+  .p-tilt{transform:rotate(-6deg) translateY(10px);z-index:1}
+  .p-mid{transform:scale(1.06);z-index:2}
+  .p-tilt2{transform:rotate(6deg) translateY(10px);z-index:1}
+
+  /* screen contents */
+  .s-head{padding:34px 16px 12px;display:flex;justify-content:space-between;align-items:center}
+  .s-brand{font-family:'Sora';font-weight:800;font-size:16px}
+  .s-sub{font-size:11px;color:var(--muted);padding:0 16px}
+  .prod{margin:10px 16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;overflow:hidden}
+  .prod .img{height:78px;display:flex;align-items:center;justify-content:center;font-size:38px;background:linear-gradient(135deg,rgba(52,199,89,.25),rgba(242,100,25,.2))}
+  .prod .info{padding:9px 11px}.prod .nm{font-size:13px;font-weight:600}.prod .mt{font-size:10px;color:var(--muted)}
+  .prod .pr{color:var(--gold);font-family:'Sora';font-weight:700;font-size:14px;margin-top:3px}
+  .tabbar{position:absolute;bottom:0;left:0;right:0;height:52px;background:rgba(5,12,8,.9);border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-around;align-items:center;font-size:18px}
+  .card-loy{margin:14px 16px;background:linear-gradient(135deg,var(--green2),var(--green));border-radius:16px;padding:16px;color:#fff}
+  .card-loy .pts{font-family:'Sora';font-size:26px;font-weight:800;color:var(--gold)}
+  .refbox{margin:12px 16px;border:1px dashed rgba(52,199,89,.5);border-radius:14px;padding:14px;text-align:center}
+  .refcode{font-family:'Sora';font-size:22px;letter-spacing:4px;color:var(--lime);font-weight:700}
+  .chk{margin:10px 16px;font-size:12px}
+  .chk .row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px dashed rgba(255,255,255,.1)}
+  .chk .row:last-child{border:0;font-family:'Sora';font-weight:700}
+  .pay-btn{margin:8px 16px;background:linear-gradient(135deg,var(--lime),var(--green2));color:#04140C;text-align:center;padding:12px;border-radius:12px;font-weight:700;font-size:13px}
+
+  .grid{display:grid;gap:20px;grid-template-columns:repeat(3,1fr)}
+  .card{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:26px;transition:.3s}
+  .card:hover{transform:translateY(-5px);border-color:rgba(52,199,89,.5)}
+  .card .ico{font-size:28px;margin-bottom:12px}.card h3{font-size:18px;margin-bottom:6px}.card p{color:var(--muted);font-size:14px}
+
+  .band{background:linear-gradient(90deg,var(--green),var(--green2));padding:44px 0;text-align:center}
+  .band .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+  .band .n{font-family:'Sora';font-size:38px;font-weight:800;color:#fff}.band .l{color:#CFEAD9;font-size:13px}
+
+  footer{padding:60px 0;text-align:center;border-top:1px solid rgba(255,255,255,.08)}
+  footer .brand{font-size:34px}footer p{color:var(--muted);margin-top:8px}
+  @media(max-width:920px){.hero-grid,.grid,.band .grid4{grid-template-columns:1fr}.band .grid4{grid-template-columns:repeat(2,1fr)}.p-tilt,.p-tilt2{display:none}}
+</style>
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <div class="hero-grid">
+    <div class="reveal in">
+      <div class="brand">FRUTI<span class="go">GO</span></div>
+      <h1>Todo el mercado del agro, <span class="go">en tu bolsillo</span>.</h1>
+      <p class="lead">App móvil nativa (React Native + Expo), bilingüe y con modo oscuro. Compra por kilo o quintal, paga como quieras, sigue tu pedido en vivo y gana recompensas.</p>
+      <div class="badges">
+        <div class="badge">📱 iOS & Android</div>
+        <div class="badge">🌐 ES / EN</div>
+        <div class="badge">🌙 Modo oscuro</div>
+      </div>
+    </div>
+    <div class="phones reveal in">
+      <!-- left tilt: loyalty/referral -->
+      <div class="phone p-tilt"><div class="screen">
+        <div class="s-head"><span class="s-brand">Perfil</span><span>🧑‍🌾</span></div>
+        <div class="card-loy"><div class="pts">1,240 <span style="font-size:11px;color:#fff">Points</span></div><div style="font-size:11px">Nivel Oro · -10%</div></div>
+        <div class="refbox"><div style="font-size:11px;color:var(--muted)">🤝 Invita y gana $5</div><div class="refcode">J3DJQHKY</div><div style="font-size:10px;color:var(--muted)">Referidos: 3 · Crédito: $15.00</div></div>
+        <div class="tabbar"><span>🏠</span><span>🔍</span><span>🛒</span><span>👤</span></div>
+      </div></div>
+      <!-- center: catalog -->
+      <div class="phone p-mid"><div class="screen">
+        <div class="s-head"><span class="s-brand">FRUTI<span class="go">GO</span></span><span>🛒</span></div>
+        <div class="s-sub">Fresco de las fincas de Panamá</div>
+        <div class="prod"><div class="img">🥭</div><div class="info"><div class="nm">Mango Calidad Extra</div><div class="mt">Cerro Punta · Chiriquí</div><div class="pr">$2.40 / kg</div></div></div>
+        <div class="prod"><div class="img">🥑</div><div class="info"><div class="nm">Aguacate Hass</div><div class="mt">Boquete · Chiriquí</div><div class="pr">$3.10 / kg</div></div></div>
+        <div class="tabbar"><span>🏠</span><span>🔍</span><span>🛒</span><span>👤</span></div>
+      </div></div>
+      <!-- right tilt: checkout -->
+      <div class="phone p-tilt2"><div class="screen">
+        <div class="s-head"><span class="s-brand">Pago</span><span>💳</span></div>
+        <div class="chk">
+          <div class="row"><span>Subtotal</span><span>$40.00</span></div>
+          <div class="row"><span>🎁 Canje (200 pts)</span><span>- $2.00</span></div>
+          <div class="row"><span>🤝 Crédito referidos</span><span>- $5.00</span></div>
+          <div class="row"><span>Envío</span><span>Gratis</span></div>
+          <div class="row"><span>TOTAL</span><span class="go">$33.00</span></div>
+        </div>
+        <div class="pay-btn">📲 Pagar con Yappy</div>
+        <div style="text-align:center;font-size:10px;color:var(--muted);margin-top:8px">Stripe · Visa · Cripto</div>
+        <div class="tabbar"><span>🏠</span><span>🔍</span><span>🛒</span><span>👤</span></div>
+      </div></div>
+    </div>
+  </div>
+</div></header>
+
+<div class="band"><div class="wrap grid4 reveal">
+  <div><div class="n">4</div><div class="l">Roles en una app</div></div>
+  <div><div class="n">3</div><div class="l">Unidades: kg · ½qq · qq</div></div>
+  <div><div class="n">GPS</div><div class="l">Seguimiento en vivo</div></div>
+  <div><div class="n">PDF</div><div class="l">Recibos y manifiestos</div></div>
+</div></div>
+
+<section><div class="wrap">
+  <div class="eyebrow reveal">Experiencia del comprador</div>
+  <h2 class="big reveal">Comprar fresco nunca fue tan simple.</h2>
+  <p class="sub reveal">Una experiencia pulida de principio a fin: del catálogo con imágenes reales al pago y el seguimiento.</p>
+  <div class="grid">
+    <div class="card reveal"><div class="ico">🥬</div><h3>Catálogo con origen</h3><p>Productos por provincia con trazabilidad, certificaciones e imágenes reales.</p></div>
+    <div class="card reveal"><div class="ico">💳</div><h3>Pago nativo</h3><p>Stripe Payment Sheet, Yappy, Visa y cripto — checkout fluido y seguro.</p></div>
+    <div class="card reveal"><div class="ico">📍</div><h3>Tracking en vivo</h3><p>Mapa con el repartidor en tiempo real y notificaciones push en cada etapa.</p></div>
+    <div class="card reveal"><div class="ico">🎁</div><h3>Puntos & niveles</h3><p>Gana FrutiGo Points en cada compra, sube de nivel y canjéalos al pagar.</p></div>
+    <div class="card reveal"><div class="ico">🤝</div><h3>Referidos</h3><p>Comparte tu código y gana $5 cuando tu referido paga su primer pedido.</p></div>
+    <div class="card reveal"><div class="ico">⚓</div><h3>Ship Provisioning</h3><p>Módulo especial para buques: manifiesto digital y ventanas de entrega por puerto.</p></div>
+  </div>
+</div></section>
+
+<section style="background:linear-gradient(180deg,transparent,rgba(27,122,75,.08))"><div class="wrap">
+  <div class="eyebrow reveal">No solo compradores</div>
+  <h2 class="big reveal">Una app, cuatro experiencias.</h2>
+  <div class="grid">
+    <div class="card reveal"><div class="ico">🛒</div><h3>Comprador</h3><p>Catálogo, carrito, checkout, pedidos, fidelización y referidos.</p></div>
+    <div class="card reveal"><div class="ico">🌾</div><h3>Proveedor</h3><p>Portal para publicar productos, ver pedidos y predicción de demanda.</p></div>
+    <div class="card reveal"><div class="ico">🛵</div><h3>Repartidor</h3><p>Entregas asignadas con GPS, cambio de estado y mapa de ruta.</p></div>
+    <div class="card reveal"><div class="ico">🛡️</div><h3>Admin</h3><p>Acceso al panel de administración con métricas y verificación.</p></div>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <div class="brand">FRUTI<span class="go">GO</span></div>
+  <p>App móvil · Del campo a tu puerta, siempre fresco.</p>
+</div></footer>
+
+<script>
+  const io=new IntersectionObserver(es=>es.forEach(e=>e.isIntersecting&&e.target.classList.add('in')),{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>

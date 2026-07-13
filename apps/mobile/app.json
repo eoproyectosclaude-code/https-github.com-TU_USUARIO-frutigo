@@ -21,7 +21,13 @@
       "package": "pa.frutigo.app",
       "adaptiveIcon": {
         "backgroundColor": "#0F3D2E"
-      }
+      },
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "bundler": "metro"
@@ -45,9 +51,21 @@
       "expo-notifications"
     ],
     "extra": {
-      "apiBaseUrl": "http://localhost:3000",
+      "apiBaseUrl": "http://1:3000",
       "stripePublishableKey": "pk_test_xxx",
-      "stripeMerchantId": "merchant.pa.frutigo.app"
+      "stripeMerchantId": "merchant.pa.frutigo.app",
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "1561bb95-089b-49ab-aaef-f59bc30b008d"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/1561bb95-089b-49ab-aaef-f59bc30b008d"
     }
   }
 }

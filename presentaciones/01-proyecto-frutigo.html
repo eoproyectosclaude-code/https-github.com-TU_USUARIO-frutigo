@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FRUTI GO · Plataforma Agro-Comercial de Panamá</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --green:#0F3D2E; --green2:#1B7A4B; --lime:#34C759; --orange:#F26419; --gold:#F6C615;
+    --ink:#0A1712; --paper:#F4FBF6; --muted:#8AA595; --card:rgba(255,255,255,.06);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--ink);color:#EAF6EE;overflow-x:hidden;line-height:1.6}
+  h1,h2,h3,.brand{font-family:'Sora',sans-serif;letter-spacing:-.02em}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+  .go{color:var(--gold)}
+  section{position:relative;padding:110px 0}
+  .eyebrow{color:var(--lime);font-weight:600;font-size:14px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:14px}
+  .reveal{opacity:0;transform:translateY(34px);transition:all .8s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+
+  /* NAV */
+  nav{position:fixed;top:0;left:0;right:0;z-index:50;backdrop-filter:blur(14px);background:rgba(10,23,18,.6);border-bottom:1px solid rgba(255,255,255,.06)}
+  nav .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
+  nav .brand{font-weight:800;font-size:22px}
+  nav a{color:#CFEAD9;text-decoration:none;font-size:14px;margin-left:24px;opacity:.8;transition:.2s}
+  nav a:hover{opacity:1;color:var(--gold)}
+
+  /* HERO */
+  .hero{min-height:100vh;display:flex;align-items:center;overflow:hidden;
+    background:radial-gradient(1200px 700px at 75% -10%,rgba(52,199,89,.25),transparent 60%),
+               radial-gradient(900px 600px at 10% 110%,rgba(242,100,25,.18),transparent 55%),var(--ink)}
+  .blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.5;animation:float 14s ease-in-out infinite}
+  .b1{width:420px;height:420px;background:var(--green2);top:-60px;right:-40px}
+  .b2{width:360px;height:360px;background:var(--orange);bottom:-80px;left:-60px;animation-delay:-6s}
+  @keyframes float{50%{transform:translateY(-40px) scale(1.08)}}
+  .hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:40px;align-items:center;position:relative;z-index:2}
+  .hero h1{font-size:clamp(42px,6vw,76px);line-height:1.02;font-weight:800}
+  .hero p.lead{font-size:20px;color:#CFEAD9;margin:22px 0 30px;max-width:560px}
+  .pill{display:inline-flex;gap:8px;align-items:center;background:var(--card);border:1px solid rgba(255,255,255,.12);
+    padding:8px 16px;border-radius:100px;font-size:13px;color:#CFEAD9;margin-bottom:26px}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--lime);box-shadow:0 0 0 4px rgba(52,199,89,.25)}
+  .cta{display:flex;gap:14px;flex-wrap:wrap}
+  .btn{padding:15px 28px;border-radius:14px;font-weight:600;font-size:15px;text-decoration:none;transition:.25s;display:inline-block}
+  .btn.primary{background:linear-gradient(135deg,var(--lime),var(--green2));color:#04140C;box-shadow:0 18px 40px -14px rgba(52,199,89,.6)}
+  .btn.primary:hover{transform:translateY(-3px)}
+  .btn.ghost{border:1px solid rgba(255,255,255,.2);color:#EAF6EE}
+  .btn.ghost:hover{border-color:var(--gold);color:var(--gold)}
+
+  /* phone-ish hero card */
+  .hero-card{background:linear-gradient(160deg,rgba(27,122,75,.35),rgba(10,23,18,.6));border:1px solid rgba(255,255,255,.12);
+    border-radius:26px;padding:26px;backdrop-filter:blur(8px);box-shadow:0 40px 80px -30px rgba(0,0,0,.7)}
+  .hero-card .row{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px dashed rgba(255,255,255,.1)}
+  .hero-card .row:last-child{border:0}
+  .hero-card .k{color:#CFEAD9;font-size:14px}
+  .hero-card .v{font-family:'Sora';font-weight:700}
+  .tag{font-size:11px;padding:3px 10px;border-radius:100px;background:rgba(52,199,89,.18);color:var(--lime)}
+
+  /* STATS band */
+  .band{background:linear-gradient(90deg,var(--green),var(--green2));padding:46px 0}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;text-align:center}
+  .stats .n{font-family:'Sora';font-size:clamp(30px,4vw,46px);font-weight:800;color:#fff}
+  .stats .l{color:#CFEAD9;font-size:14px;margin-top:4px}
+
+  /* generic grid cards */
+  .grid{display:grid;gap:22px}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  .card{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:28px;transition:.3s}
+  .card:hover{border-color:rgba(52,199,89,.5);transform:translateY(-5px);background:rgba(52,199,89,.06)}
+  .card .ico{font-size:30px;margin-bottom:14px}
+  .card h3{font-size:19px;margin-bottom:8px}
+  .card p{color:var(--muted);font-size:15px}
+  h2.big{font-size:clamp(30px,4.4vw,50px);font-weight:800;line-height:1.08;margin-bottom:16px}
+  .sub{color:#CFEAD9;font-size:18px;max-width:640px;margin-bottom:44px}
+
+  /* segments */
+  .seg{display:flex;gap:16px;align-items:flex-start;padding:22px;border-radius:16px;border:1px solid rgba(255,255,255,.08);background:var(--card)}
+  .seg .em{font-size:32px}
+  .seg h3{font-size:17px}
+  .seg p{color:var(--muted);font-size:14px}
+
+  /* payments */
+  .pay{display:flex;flex-wrap:wrap;gap:14px}
+  .paychip{padding:14px 22px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:var(--card);font-weight:600;font-family:'Sora';display:flex;gap:10px;align-items:center}
+
+  /* tech */
+  .tech{display:flex;flex-wrap:wrap;gap:10px}
+  .tech span{padding:9px 16px;border-radius:100px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);font-size:13px;color:#CFEAD9}
+
+  /* quality metrics */
+  .qm{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+  .qm .card{text-align:center}
+  .qm .n{font-family:'Sora';font-size:40px;font-weight:800;color:var(--gold)}
+
+  /* roadmap */
+  .road{position:relative;padding-left:30px}
+  .road::before{content:"";position:absolute;left:8px;top:6px;bottom:6px;width:2px;background:linear-gradient(var(--lime),transparent)}
+  .step{position:relative;padding:0 0 26px 22px}
+  .step::before{content:"";position:absolute;left:-26px;top:5px;width:16px;height:16px;border-radius:50%;background:var(--ink);border:3px solid var(--lime)}
+  .step h3{font-size:17px}.step p{color:var(--muted);font-size:14px}
+
+  footer{padding:70px 0 50px;text-align:center;border-top:1px solid rgba(255,255,255,.08);background:radial-gradient(600px 300px at 50% 0,rgba(52,199,89,.12),transparent)}
+  footer .brand{font-size:40px;font-weight:800}
+  footer p{color:var(--muted);margin-top:10px}
+
+  @media(max-width:860px){
+    .hero-grid,.g3,.g2,.g4,.stats,.qm{grid-template-columns:1fr}
+    .stats{grid-template-columns:repeat(2,1fr)}
+    nav a:not(.navcta){display:none}
+  }
+</style>
+</head>
+<body>
+
+<nav><div class="wrap">
+  <div class="brand">FRUTI<span class="go">GO</span></div>
+  <div>
+    <a href="#solucion">Solución</a>
+    <a href="#segmentos">Mercado</a>
+    <a href="#features">Plataforma</a>
+    <a href="#calidad">Calidad</a>
+    <a href="#roadmap" class="navcta">Roadmap</a>
+  </div>
+</div></nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="blob b1"></div><div class="blob b2"></div>
+  <div class="wrap hero-grid">
+    <div class="reveal in">
+      <span class="pill"><span class="dot"></span> Del campo a tu puerta · Panamá 🇵🇦</span>
+      <h1>El marketplace agro que conecta <span class="go">el campo</span> con el mundo.</h1>
+      <p class="lead">FRUTI GO une fincas y distribuidoras panameñas con hogares, restaurantes, distribuidores y buques en tránsito por el Canal — con pagos reales, logística en vivo y trazabilidad de origen.</p>
+      <div class="cta">
+        <a href="#solucion" class="btn primary">Descubrir la plataforma</a>
+        <a href="#calidad" class="btn ghost">Ver la ingeniería</a>
+      </div>
+    </div>
+    <div class="reveal in hero-card">
+      <div class="row"><span class="k">🥭 Pedido FG-1042</span><span class="tag">EN RUTA</span></div>
+      <div class="row"><span class="k">Origen · Cerro Punta, Chiriquí</span><span class="v">Fresco</span></div>
+      <div class="row"><span class="k">Pago Yappy</span><span class="v">✓ Confirmado</span></div>
+      <div class="row"><span class="k">FrutiGo Points</span><span class="v go">+42</span></div>
+      <div class="row"><span class="k">Entrega estimada</span><span class="v">18 min</span></div>
+    </div>
+  </div>
+</header>
+
+<!-- STATS -->
+<div class="band"><div class="wrap stats reveal">
+  <div><div class="n">4</div><div class="l">Segmentos de mercado</div></div>
+  <div><div class="n">4</div><div class="l">Métodos de pago reales</div></div>
+  <div><div class="n">10</div><div class="l">Provincias con trazabilidad</div></div>
+  <div><div class="n">100%</div><div class="l">Bilingüe ES / EN</div></div>
+</div></div>
+
+<!-- SOLUCION -->
+<section id="solucion"><div class="wrap">
+  <div class="eyebrow reveal">El problema · La solución</div>
+  <h2 class="big reveal">La cadena agro pierde valor entre el campo y la mesa.</h2>
+  <p class="sub reveal">Intermediación excesiva, poca trazabilidad y logística fragmentada. FRUTI GO digitaliza la cadena completa en una sola plataforma B2B2C.</p>
+  <div class="grid g3">
+    <div class="card reveal"><div class="ico">🌾</div><h3>Productores directos</h3><p>Fincas y cooperativas verificadas publican su catálogo por kilogramo o quintal, con precios y stock en tiempo real.</p></div>
+    <div class="card reveal"><div class="ico">🚚</div><h3>Logística en vivo</h3><p>Repartidores con GPS, seguimiento en tiempo real y ventanas de entrega — incluso aprovisionamiento a buques (Ship Provisioning).</p></div>
+    <div class="card reveal"><div class="ico">💳</div><h3>Pagos sin fricción</h3><p>Stripe, Yappy, Visa y criptomonedas, con conciliación automática y recibos digitales.</p></div>
+  </div>
+</div></section>
+
+<!-- SEGMENTOS -->
+<section id="segmentos" style="background:linear-gradient(180deg,transparent,rgba(27,122,75,.08),transparent)"><div class="wrap">
+  <div class="eyebrow reveal">Un solo motor, cuatro mercados</div>
+  <h2 class="big reveal">Diseñado para toda la cadena de valor.</h2>
+  <p class="sub reveal">La misma plataforma sirve al hogar, al restaurante, al distribuidor mayorista y al buque en tránsito por el Canal de Panamá.</p>
+  <div class="grid g2">
+    <div class="seg reveal"><div class="em">🏠</div><div><h3>B2C · Hogares</h3><p>Compra por kilo, entrega a domicilio, fidelización con FrutiGo Points y referidos.</p></div></div>
+    <div class="seg reveal"><div class="em">🍽️</div><div><h3>B2B · HoReCa</h3><p>Restaurantes y hoteles con volúmenes por quintal, facturación y precios preferenciales.</p></div></div>
+    <div class="seg reveal"><div class="em">📦</div><div><h3>Distribuidores</h3><p>Compras mayoristas, predicción de demanda y portal de proveedor dedicado.</p></div></div>
+    <div class="seg reveal"><div class="em">⚓</div><div><h3>Buques · Ship Provisioning</h3><p>Aprovisionamiento marítimo con manifiesto digital, exención de ITBMS y ventanas por puerto (Balboa, Cristóbal, Colón).</p></div></div>
+  </div>
+</div></section>
+
+<!-- FEATURES -->
+<section id="features"><div class="wrap">
+  <div class="eyebrow reveal">Plataforma completa</div>
+  <h2 class="big reveal">Todo lo que una operación agro moderna necesita.</h2>
+  <p class="sub reveal">Cuatro apps en un ecosistema: comprador, proveedor, repartidor y administración.</p>
+  <div class="grid g3">
+    <div class="card reveal"><div class="ico">🎁</div><h3>Fidelización & Referidos</h3><p>FrutiGo Points con niveles Bronce→Platino, canje en checkout y programa de referidos con crédito de $5.</p></div>
+    <div class="card reveal"><div class="ico">🛰️</div><h3>Tiempo real</h3><p>WebSockets para tracking de entregas, KPIs que se actualizan solos y alertas de pedidos grandes.</p></div>
+    <div class="card reveal"><div class="ico">🧠</div><h3>Inteligencia</h3><p>Motor de recomendaciones por segmento y predicción de demanda para proveedores.</p></div>
+    <div class="card reveal"><div class="ico">🗺️</div><h3>Mapas & Heatmap</h3><p>Mapa de entregas activas y heatmap histórico de zonas de mayor actividad.</p></div>
+    <div class="card reveal"><div class="ico">📄</div><h3>Documentos</h3><p>Recibos y manifiestos en PDF, envío por email y exportación CSV de pedidos y pagos.</p></div>
+    <div class="card reveal"><div class="ico">🌐</div><h3>Bilingüe & Dark</h3><p>Experiencia completa en Español e Inglés, con modo oscuro y diseño de marca.</p></div>
+  </div>
+</div></section>
+
+<!-- PAGOS -->
+<section style="background:linear-gradient(180deg,transparent,rgba(242,100,25,.06),transparent)"><div class="wrap">
+  <div class="eyebrow reveal">Pagos de nivel institucional</div>
+  <h2 class="big reveal">Cuatro pasarelas. Cero fricción. Conciliación automática.</h2>
+  <p class="sub reveal">Arquitectura de estrategia con verificación de firma de webhooks e idempotencia — el estándar de un fintech.</p>
+  <div class="pay reveal">
+    <div class="paychip">💠 Stripe · Payment Sheet</div>
+    <div class="paychip">📲 Yappy · Botón de Pago</div>
+    <div class="paychip">💳 Visa · Formulario seguro</div>
+    <div class="paychip">₿ Cripto · Coinbase Commerce</div>
+    <div class="paychip">🏦 ACH / SWIFT</div>
+  </div>
+</div></section>
+
+<!-- CALIDAD -->
+<section id="calidad"><div class="wrap">
+  <div class="eyebrow reveal">Ingeniería de nivel mundial</div>
+  <h2 class="big reveal">Construido como producto de producción, no como prototipo.</h2>
+  <p class="sub reveal">Arquitectura limpia, dominio puro testeado, seguridad endurecida y despliegue de un clic.</p>
+  <div class="qm reveal">
+    <div class="card"><div class="n">74+</div><div class="l">Tests automatizados</div></div>
+    <div class="card"><div class="n">4</div><div class="l">Jobs de CI/CD</div></div>
+    <div class="card"><div class="n">0</div><div class="l">Vulnerabilidades críticas</div></div>
+    <div class="card"><div class="n">100%</div><div class="l">Contenedor no-root</div></div>
+  </div>
+  <div style="height:34px"></div>
+  <div class="tech reveal">
+    <span>React Native · Expo</span><span>NestJS</span><span>TypeScript</span><span>PostgreSQL · Prisma</span>
+    <span>Socket.IO</span><span>JWT + Refresh</span><span>Docker</span><span>Playwright</span>
+    <span>Jest</span><span>GitHub Actions</span><span>Helmet · Rate-limit</span><span>Render</span>
+  </div>
+</div></section>
+
+<!-- ROADMAP -->
+<section id="roadmap" style="background:linear-gradient(180deg,transparent,rgba(27,122,75,.08))"><div class="wrap">
+  <div class="eyebrow reveal">Hacia adelante</div>
+  <h2 class="big reveal">Una plataforma lista para escalar.</h2>
+  <div class="road reveal" style="margin-top:30px">
+    <div class="step"><h3>✅ Fase 1 — Núcleo operativo</h3><p>Catálogo, pedidos, 4 pasarelas de pago, auth, roles y portal de proveedor.</p></div>
+    <div class="step"><h3>✅ Fase 2 — Logística & tiempo real</h3><p>Repartidores GPS, tracking en vivo, dashboard admin, notificaciones push.</p></div>
+    <div class="step"><h3>✅ Fase 3 — Crecimiento</h3><p>Fidelización, referidos, recomendaciones, predicción de demanda, heatmap.</p></div>
+    <div class="step"><h3>🚀 Fase 4 — Escala regional</h3><p>Frontend web para compradores, analítica de negocio y expansión a Centroamérica.</p></div>
+  </div>
+</div></section>
+
+<footer>
+  <div class="wrap">
+    <div class="brand">FRUTI<span class="go">GO</span></div>
+    <p>Plataforma agro-comercial B2B2C de Panamá · Del campo a tu puerta, siempre fresco.</p>
+    <p style="margin-top:18px;font-size:13px;opacity:.6">© 2026 FRUTI GO · Presentación del proyecto</p>
+  </div>
+</footer>
+
+<script>
+  const io=new IntersectionObserver((es)=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in')}),{threshold:.14});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>
