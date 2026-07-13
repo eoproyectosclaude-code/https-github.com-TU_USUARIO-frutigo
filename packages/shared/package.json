@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist"],
+  "react-native": "src/index.ts",
+  "files": ["dist", "src"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "prepare": "node build-shared.js",
