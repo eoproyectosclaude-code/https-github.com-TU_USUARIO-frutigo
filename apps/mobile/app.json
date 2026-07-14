@@ -41,7 +41,7 @@
         "@stripe/stripe-react-native",
         {
           "merchantIdentifier": "merchant.pa.frutigo.app",
-          "enableGooglePay": true
+          "enableGooglePay": false
         }
       ],
       [

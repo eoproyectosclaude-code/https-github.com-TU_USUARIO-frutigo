@@ -63,13 +63,25 @@ export default function RootLayout() {
   const merchantId =
     (Constants.expoConfig?.extra?.stripeMerchantId as string | undefined) ?? 'merchant.pa.frutigo.app';
 
+  // Solo inicializa Stripe si hay una llave publicable REAL. Con un placeholder
+  // ("pk_test_xxx") el SDK nativo puede fallar al arrancar y cerrar la app.
+  const hasStripe = /^pk_(test|live)_[A-Za-z0-9]{16,}$/.test(stripeKey);
+
+  const content = (
+    <AppProvider>
+      <RootStack />
+    </AppProvider>
+  );
+
   return (
     <SafeAreaProvider>
-      <StripeProvider publishableKey={stripeKey} merchantIdentifier={merchantId}>
-        <AppProvider>
-          <RootStack />
-        </AppProvider>
-      </StripeProvider>
+      {hasStripe ? (
+        <StripeProvider publishableKey={stripeKey} merchantIdentifier={merchantId}>
+          {content}
+        </StripeProvider>
+      ) : (
+        content
+      )}
     </SafeAreaProvider>
   );
 }
