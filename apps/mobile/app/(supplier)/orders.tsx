@@ -7,9 +7,9 @@ import { api } from '../../src/services/api';
 
 const STATUS_COLOR: Record<string, string> = {
   PAGADO: '#22C55E',
-  PENDIENTE_PAGO: '#F6C615',
+  PENDIENTE_PAGO: '#F2C707',
   EN_RUTA: '#3B82F6',
-  ENTREGADO: '#1B7A4B',
+  ENTREGADO: '#6B8E23',
   CANCELADO: '#EF4444',
 };
 

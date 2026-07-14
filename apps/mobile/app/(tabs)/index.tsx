@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
   shipBanner: { marginHorizontal: spacing.lg, marginBottom: spacing.lg },
   shipTitle: { color: '#fff', fontFamily: typography.title, fontSize: fontSize.md },
   shipDesc: { color: '#E6F4EC', fontFamily: typography.body, fontSize: fontSize.sm, marginTop: 4 },
-  shipCta: { color: '#F6C615', fontFamily: typography.bodyMedium, fontSize: fontSize.sm, marginTop: 8 },
+  shipCta: { color: '#F2C707', fontFamily: typography.bodyMedium, fontSize: fontSize.sm, marginTop: 8 },
   sectionTitle: {
     fontFamily: typography.title,
     fontSize: fontSize.lg,

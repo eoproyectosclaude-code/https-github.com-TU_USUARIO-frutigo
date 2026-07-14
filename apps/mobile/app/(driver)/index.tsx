@@ -8,9 +8,9 @@ import { useApp } from '../../src/providers/AppProvider';
 import { api } from '../../src/services/api';
 
 const STATUS_COLOR: Record<string, string> = {
-  ASIGNADO: '#F6C615',
+  ASIGNADO: '#F2C707',
   RECOGIDO: '#3B82F6',
-  EN_RUTA: '#F26419',
+  EN_RUTA: '#D9A404',
   ENTREGADO: '#22C55E',
   FALLIDO: '#EF4444',
 };

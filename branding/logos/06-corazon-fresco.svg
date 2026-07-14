@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 240" font-family="Poppins, Montserrat, Arial, sans-serif">
+  <g id="mark">
+  <path d="M122 204C62 154 42 114 42 84c0-28 22-46 46-46 16 0 28 8 34 20 6-12 18-20 34-20 24 0 46 18 46 46 0 30-20 70-80 120z" fill="#6B8E23"/>
+  <path d="M100 132c0-30 20-48 48-48 2 30-16 50-44 50-2 0-4-1-4-2z" fill="#FFFFFF"/>
+  <circle cx="158" cy="70" r="10" fill="#F2C707"/></g>
+  <text x="256" y="128" font-size="58" font-weight="800" letter-spacing="1" fill="#333D1C">FRUTI<tspan fill="#F2C707"> GO</tspan></text>
+  <text x="258" y="162" font-size="17" font-weight="600" letter-spacing="1.5" fill="#6B8E23">Market digital de frutas y legumbres</text>
+</svg>

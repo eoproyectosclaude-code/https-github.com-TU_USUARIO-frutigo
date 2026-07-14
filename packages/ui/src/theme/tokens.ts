@@ -1,31 +1,37 @@
 /**
- * Design tokens de FRUTI GO.
- * Paleta oficial del manual de marca:
- *  - Verde oscuro  → fondo/identidad ("del campo")
- *  - Naranja       → acción/energía ("GO")
- *  - Amarillo      → acentos/destacados
+ * Design tokens de FRUTI GO — identidad 2026.
+ * Paleta oficial del manual de marca (branding/MANUAL-DE-MARCA.md):
+ *  - Verde olivo   → identidad/fondo ("del campo")
+ *  - Amarillo      → acción/energía ("GO")
+ *  - Blanco        → frescura, aire y legibilidad
  * Tipografía: Poppins (display/títulos) + Inter (cuerpo).
  */
 
 export const palette = {
   // Marca
-  greenDeep: '#0F3D2E', // verde campo
-  green: '#1B7A4B',
-  greenLight: '#34C759',
-  orange: '#F26419', // GO
-  orangeSoft: '#FF7A3D',
-  yellow: '#F6C615', // acento
+  oliveDeep: '#333D1C', // verde olivo profundo — identidad
+  olive: '#6B8E23', // verde olivo — color principal
+  oliveLight: '#9CB853', // verde olivo claro — acentos suaves
+  oliveSoft: '#EFF3E3', // fondo verdoso muy claro
+  yellow: '#F2C707', // amarillo GO — acción
+  yellowDeep: '#D9A404', // amarillo profundo — hover/contraste
   // Neutros
-  carbon: '#0E1726', // dark mode bg
-  ink: '#11203A',
-  slate: '#64748B',
-  cloud: '#F5F7FA',
+  carbon: '#171C0F', // dark mode bg (olivo carbón)
+  ink: '#20260F', // texto principal
+  slate: '#6B7280', // texto secundario
+  cloud: '#FAFAF5', // fondo claro (blanco cálido)
   white: '#FFFFFF',
   // Estado
-  success: '#22C55E',
-  warning: '#F6C615',
-  danger: '#EF4444',
+  success: '#4C9A2A',
+  warning: '#F2C707',
+  danger: '#DC2626',
   info: '#3B82F6',
+  // Alias de compatibilidad (código legado)
+  greenDeep: '#333D1C',
+  green: '#6B8E23',
+  greenLight: '#9CB853',
+  orange: '#F2C707', // el naranja fue retirado: apunta al amarillo GO
+  orangeSoft: '#D9A404',
 } as const;
 
 export const spacing = {

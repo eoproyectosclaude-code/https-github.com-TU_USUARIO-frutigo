@@ -136,13 +136,13 @@ export default function TrackScreen() {
                   coordinate={{ latitude: data.lastLocation.lat, longitude: data.lastLocation.lng }}
                   title={data.driver?.name ?? (locale === 'es' ? 'Repartidor' : 'Driver')}
                   description="🛵"
-                  pinColor="#F26419"
+                  pinColor="#D9A404"
                 />
                 {data.dropoff ? (
                   <Marker
                     coordinate={{ latitude: data.dropoff.lat, longitude: data.dropoff.lng }}
                     title={locale === 'es' ? 'Destino' : 'Drop-off'}
-                    pinColor="#1B7A4B"
+                    pinColor="#6B8E23"
                   />
                 ) : null}
               </MapView>

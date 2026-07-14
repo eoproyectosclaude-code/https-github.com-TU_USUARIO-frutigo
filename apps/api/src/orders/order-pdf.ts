@@ -28,7 +28,7 @@ export interface ReceiptData {
   totalUsd: number;
 }
 
-const C = { green: '#0F3D2E', orange: '#F26419', ink: '#11203A', slate: '#64748B', line: '#E2E8F0' };
+const C = { green: '#333D1C', orange: '#D9A404', ink: '#11203A', slate: '#64748B', line: '#E2E8F0' };
 const UNIT: Record<string, string> = { KG: '1 kg', HALF_QUINTAL: '½ quintal', QUINTAL: '1 quintal' };
 const money = (n: number) => `$${n.toFixed(2)}`;
 const fmtDate = (d: string | Date) =>
@@ -52,7 +52,7 @@ export function buildOrderReceiptPdf(data: ReceiptData): Promise<Buffer> {
     doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(26).text('FRUTI', left, 30, { continued: true });
     doc.fillColor(C.orange).text('GO');
     doc.fillColor('#E6F4EC').font('Helvetica').fontSize(11).text('Del campo a tu puerta', left, 62);
-    doc.fillColor('#F6C615').font('Helvetica-Bold').fontSize(12).text('RECIBO', left, 30, { width: right - left, align: 'right' });
+    doc.fillColor('#F2C707').font('Helvetica-Bold').fontSize(12).text('RECIBO', left, 30, { width: right - left, align: 'right' });
     doc.fillColor('#E6F4EC').font('Helvetica').fontSize(10).text(data.reference, left, 50, { width: right - left, align: 'right' });
 
     let y = 116;
@@ -105,12 +105,12 @@ export function buildOrderReceiptPdf(data: ReceiptData): Promise<Buffer> {
     };
 
     totalRow('Subtotal', money(data.subtotalUsd));
-    if (data.loyaltyDiscountUsd > 0) totalRow('Descuento nivel', `- ${money(data.loyaltyDiscountUsd)}`, { color: '#1B7A4B' });
+    if (data.loyaltyDiscountUsd > 0) totalRow('Descuento nivel', `- ${money(data.loyaltyDiscountUsd)}`, { color: '#6B8E23' });
     totalRow('Comisión', money(data.buyerFeeUsd));
     totalRow('Envío', data.deliveryUsd === 0 ? 'Gratis' : money(data.deliveryUsd));
     totalRow('ITBMS', money(data.taxUsd));
-    if (data.loyaltyCreditUsd > 0) totalRow(`Canje (${data.pointsRedeemed} pts)`, `- ${money(data.loyaltyCreditUsd)}`, { color: '#1B7A4B' });
-    if (data.referralCreditUsd > 0) totalRow('Crédito referidos', `- ${money(data.referralCreditUsd)}`, { color: '#1B7A4B' });
+    if (data.loyaltyCreditUsd > 0) totalRow(`Canje (${data.pointsRedeemed} pts)`, `- ${money(data.loyaltyCreditUsd)}`, { color: '#6B8E23' });
+    if (data.referralCreditUsd > 0) totalRow('Crédito referidos', `- ${money(data.referralCreditUsd)}`, { color: '#6B8E23' });
     doc.moveTo(left + 250, y).lineTo(right, y).strokeColor(C.line).stroke();
     y += 8;
     totalRow('TOTAL', money(data.totalUsd), { bold: true, color: C.orange });

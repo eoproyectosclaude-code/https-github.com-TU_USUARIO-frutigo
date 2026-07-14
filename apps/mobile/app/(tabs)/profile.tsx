@@ -100,7 +100,7 @@ export default function ProfileScreen() {
 
       {loyalty ? (
         <Card theme={theme} style={{ marginBottom: spacing.lg, backgroundColor: theme.colors.secondary }}>
-          <Text style={{ color: '#F6C615', fontFamily: typography.title, fontSize: fontSize.xl }}>
+          <Text style={{ color: '#F2C707', fontFamily: typography.title, fontSize: fontSize.xl }}>
             {loyalty.points} <Text style={{ fontSize: fontSize.sm, color: '#fff' }}>FrutiGo Points</Text>
           </Text>
           <Text style={{ color: '#fff', fontFamily: typography.subtitle, fontSize: fontSize.md, marginTop: 2 }}>

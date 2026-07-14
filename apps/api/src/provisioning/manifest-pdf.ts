@@ -13,8 +13,8 @@ export interface ManifestData {
 }
 
 const COLORS = {
-  green: '#0F3D2E',
-  orange: '#F26419',
+  green: '#333D1C',
+  orange: '#D9A404',
   ink: '#11203A',
   slate: '#64748B',
   line: '#E2E8F0',
@@ -55,7 +55,7 @@ export function buildManifestPdf(data: ManifestData): Promise<Buffer> {
       .fontSize(11)
       .text('Ship Provisioning · Canal de Panamá', left, 62);
     doc
-      .fillColor('#F6C615')
+      .fillColor('#F2C707')
       .font('Helvetica-Bold')
       .fontSize(12)
       .text('MANIFIESTO DIGITAL', left, 30, { width: right - left, align: 'right' });
@@ -119,7 +119,7 @@ export function buildManifestPdf(data: ManifestData): Promise<Buffer> {
     y += 12;
     // Sello de exención
     doc.rect(left, y, right - left, 54).fill('#EEF7F1');
-    doc.fillColor('#1B7A4B').font('Helvetica-Bold').fontSize(11).text('✓ Exento de ITBMS', left + 14, y + 12);
+    doc.fillColor('#6B8E23').font('Helvetica-Bold').fontSize(11).text('✓ Exento de ITBMS', left + 14, y + 12);
     doc.fillColor(COLORS.slate).font('Helvetica').fontSize(9).text(data.legalBasis, left + 14, y + 30, {
       width: right - left - 28,
     });

@@ -9,9 +9,9 @@ import { downloadAndShareReceipt } from '../../src/services/pdf';
 
 const STATUS_COLOR: Record<string, string> = {
   PAGADO: '#22C55E',
-  PENDIENTE_PAGO: '#F6C615',
-  EN_RUTA: '#F26419',
-  ENTREGADO: '#1B7A4B',
+  PENDIENTE_PAGO: '#F2C707',
+  EN_RUTA: '#D9A404',
+  ENTREGADO: '#6B8E23',
   CANCELADO: '#EF4444',
 };
 

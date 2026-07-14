@@ -8,7 +8,7 @@ import { api, type AdminPayment } from '../../src/services/api';
 const STATUS_COLOR: Record<string, string> = {
   COMPLETADO: '#22C55E',
   AUTORIZADO: '#3B82F6',
-  PENDIENTE: '#F6C615',
+  PENDIENTE: '#F2C707',
   FALLIDO: '#EF4444',
   REEMBOLSADO: '#64748B',
 };
