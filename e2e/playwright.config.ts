@@ -20,9 +20,10 @@ export default defineConfig({
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
-    command: `npx --yes http-server ../apps/admin -p ${PORT} -c-1 --silent`,
+    // Servidor estático con Python (preinstalado en los runners de CI, sin descargas).
+    command: `python3 -m http.server ${PORT} --directory ../apps/admin`,
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
-    timeout: 60_000,
+    timeout: 120_000,
   },
 });
