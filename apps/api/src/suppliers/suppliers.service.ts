@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { forecastDemand } from '@frutigo/shared';
 import { PrismaService } from '../prisma/prisma.service';
+import { MemoryCacheService } from '../cache/memory-cache.service';
 import type { CreateProductDto, UpdateProductDto } from './dto/supplier-product.dto';
 
 /**
@@ -9,7 +10,10 @@ import type { CreateProductDto, UpdateProductDto } from './dto/supplier-product.
  */
 @Injectable()
 export class SuppliersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cache: MemoryCacheService,
+  ) {}
 
   private assertSupplier(supplierId?: string | null): asserts supplierId is string {
     if (!supplierId) {
@@ -28,6 +32,7 @@ export class SuppliersService {
 
   async createProduct(supplierId: string | null | undefined, dto: CreateProductDto) {
     this.assertSupplier(supplierId);
+    this.cache.invalidate('products:'); // el catálogo cambió
     return this.prisma.product.create({
       data: {
         slug: dto.slug,
@@ -54,6 +59,7 @@ export class SuppliersService {
     if (product.supplierId !== supplierId) {
       throw new ForbiddenException('Este producto no pertenece a tu cuenta');
     }
+    this.cache.invalidate('products:'); // el catálogo cambió
 
     // Reemplaza precios si vienen en el payload (upsert por unidad).
     if (dto.prices) {

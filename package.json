@@ -13,7 +13,9 @@
     "build:shared": "npm run build --workspace=@frutigo/shared",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "eslint . --ext .ts,.tsx",
-    "format": "prettier --write \"**/*.{ts,tsx,json,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
+    "loadtest": "node scripts/load-test.mjs",
+    "loadtest:sync": "node scripts/load-test.mjs --mode sync --reqs 500"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^7.18.0",
